@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hotel Leyton - Crear Cuenta</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Inter:wght@400;500;600;700&display=swap');
+    :root { --ink: #182530; --gold: #b68a35; --parchment: #f6f2e8; --paper: #ffffff; --slate: #32424b; --border: #e3dac5; }
+    body { background-color: var(--parchment); color: var(--slate); font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .card-registro { background: var(--paper); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+    .brand-title { font-family: 'Fraunces', serif; color: var(--ink); font-size: 2.2rem; text-align: center; }
+    .btn-gold { background-color: var(--gold); color: #fff; font-weight: 600; border: none; }
+    .btn-gold:hover { background-color: #967027; color: #fff; }
+    .dropdown-menu .dropdown-item { color: #182530 !important; } 
+    .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
+  </style>
+</head>
+<body>
+  <div class="card-registro p-4 my-4">
+    <div class="text-center mb-3">
+      <h1 class="brand-title">Hotel <span style="font-style: italic; color:var(--gold);">Leyton</span></h1>
+      <p class="text-muted small mb-0">Cree su cuenta de cliente para realizar reservas</p>
+    </div>
+
+    <div id="alerta" class="alert d-none small text-center"></div>
+
+    <form id="formRegistro" onsubmit="procesarRegistro(event)">
+      <div class="row g-2 mb-2">
+        <div class="col-md-6">
+          <label class="form-label fw-bold small">Documento</label>
+          <input type="text" id="documento" class="form-control" required />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold small">Teléfono</label>
+          <input type="text" id="telefono" class="form-control" required />
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label fw-bold small">Nombre Completo</label>
+        <input type="text" id="nombreCompleto" class="form-control" required />
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label fw-bold small">Correo Electrónico</label>
+        <input type="email" id="email" class="form-control" required />
+      </div>
+
+      <div class="row g-2 mb-4">
+        <div class="col-md-6">
+          <label class="form-label fw-bold small">Contraseña</label>
+          <input type="password" id="password" class="form-control" required />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold small">Confirmar Contraseña</label>
+          <input type="password" id="confirmarPassword" class="form-control" required />
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-gold w-100 py-2 mb-3 fw-bold">Crear Cuenta</button>
+    </form>
+
+    <div class="text-center border-top pt-3">
+      <small class="text-muted">¿Ya tienes una cuenta?</small><br>
+      <a href="login.html" class="fw-bold text-decoration-none" style="color:var(--gold);">Iniciar sesión</a>
+    </div>
+  </div>
+
+  <script>
+    const API_REGISTRO = 'http://192.168.100.3:3001/api/usuarios';
+
+    async function procesarRegistro(e) {
+      e.preventDefault();
+      const documento = document.getElementById('documento').value.trim();
+      const nombreCompleto = document.getElementById('nombreCompleto').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const telefono = document.getElementById('telefono').value.trim();
+      const password = document.getElementById('password').value;
+      const confirmarPassword = document.getElementById('confirmarPassword').value;
+      const alerta = document.getElementById('alerta');
+
+      if (password !== confirmarPassword) {
+        alerta.className = 'alert alert-danger small text-center';
+        alerta.textContent = 'Las contraseñas no coinciden.';
+        alerta.classList.remove('d-none');
+        return;
+      }
+
+      try {
+        await axios.post(API_REGISTRO, { documento, nombreCompleto, email, telefono, password });
+        alerta.className = 'alert alert-success small text-center';
+        alerta.textContent = '¡Cuenta creada correctamente! Redirigiendo al login...';
+        alerta.classList.remove('d-none');
+        setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+      } catch (err) {
+        alerta.className = 'alert alert-danger small text-center';
+        alerta.textContent = err.response?.data?.mensaje || 'No se pudo crear la cuenta';
+        alerta.classList.remove('d-none');
+      }
+    }
+  </script>
+</body>
+</html>

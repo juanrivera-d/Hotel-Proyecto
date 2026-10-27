@@ -1,0 +1,7 @@
+# Ignorar dependencias de Node.js
+**/node_modules/
+*.log
+
+# Ignorar archivos del sistema operativo
+.DS_Store
+Thumbs.db

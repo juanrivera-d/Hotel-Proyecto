@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hotel Leyton - Editar Servicios</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Inter:wght@400;500;600;700&display=swap');
+    :root { --ink: #182530; --gold: #b68a35; --parchment: #f6f2e8; --paper: #ffffff; --slate: #32424b; --border: #e3dac5; }
+    body { background-color: var(--parchment); color: var(--slate); font-family: 'Inter', sans-serif; }
+    .navbar { background-color: var(--ink) !important; border-bottom: 3px solid var(--gold); }
+    .navbar-brand { font-family: 'Fraunces', serif; font-size: 1.5rem; }
+    .section-title { font-family: 'Fraunces', serif; font-weight: bold; color: var(--ink); }
+    .title-underline { width: 60px; height: 3px; background-color: var(--gold); margin-bottom: 25px; }
+    .card-custom { background: #ffffff; border: 1px solid var(--border); border-radius: 8px; }
+    .btn-gold { background-color: var(--gold); color: #fff; font-weight: 600; border: none; }
+    .btn-gold:hover { background-color: #967027; color: #fff; }
+    .btn-admin-panel { background-color: transparent; color: #b68a35 !important; border: 1px solid #b68a35; font-weight: 700; }
+    .btn-admin-panel:hover { background-color: #b68a35; color: #fff !important; }
+    .dropdown-menu .dropdown-item { color: #182530 !important; } 
+    .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html"><span style="color:#fff; font-style: italic;">Hotel</span> <span style="color:var(--gold);">Leyton</span></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center gap-2" id="menu-navegacion">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle fw-semibold" href="#" role="button" data-bs-toggle="dropdown">Vista Cliente</a>
+            <ul class="dropdown-menu shadow">
+              <li><a class="dropdown-item" href="index.html">Inicio</a></li>
+              <li><a class="dropdown-item" href="ver_habitaciones.html">Catálogo</a></li>
+              <li><a class="dropdown-item" href="ver_servicios.html">Servicios</a></li>
+              <li><a class="dropdown-item" href="disponibilidad.html">Disponibilidad</a></li>
+              <li><a class="dropdown-item" href="menu_pagos.html">Pagos</a></li>
+              <li><a class="dropdown-item" href="ver_reservas.html">Mis Reservas</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <button class="btn btn-sm btn-admin-panel dropdown-toggle px-3 py-1 active" type="button" data-bs-toggle="dropdown">Administración</button>
+            <ul class="dropdown-menu shadow">
+              <li><a class="dropdown-item fw-bold text-dark" href="gestion-reservas.html">Gestión de Reservas</a></li>
+              <li><a class="dropdown-item fw-bold text-dark" href="editar_habitacion.html">Gestión de Habitaciones</a></li>
+              <li><a class="dropdown-item fw-bold text-dark active" href="editar_servicios.html">Gestión de Servicios</a></li>
+              <li><a class="dropdown-item fw-bold text-dark" href="editar_pagos.html">Gestión de Pagos</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item fw-bold text-primary" href="usuarios.html">Gestión de Usuarios</a></li>
+            </ul>
+          </li>
+          <li class="nav-item ms-lg-2" id="zona-usuario"></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-5">
+    <h2 class="section-title h3 mb-1">Panel de Administración: Servicios</h2>
+    <div class="title-underline"></div>
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card-custom p-4 shadow-sm" id="contenedor-formulario">
+          <h5 class="fw-bold mb-3" id="form-titulo">Agregar Nuevo Servicio</h5>
+          <form id="form-servicio">
+            <input type="hidden" id="idServicioEdit" value="" />
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Nombre</label>
+              <input type="text" id="nombre" class="form-control" placeholder="Nombre del servicio" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Descripción</label>
+              <textarea id="descripcion" class="form-control" rows="2" placeholder="Descripción breve"></textarea>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Precio ($)</label>
+              <input type="number" id="precio" class="form-control" placeholder="Ej: 25000" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Estado</label>
+              <select id="estado" class="form-select">
+                <option value="Disponible">Disponible</option>
+                <option value="No Disponible">No Disponible</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-gold w-100 fw-bold" id="btn-submit">Guardar Servicio</button>
+            <button type="button" class="btn btn-outline-secondary w-100 fw-bold mt-2 d-none" id="btn-cancelar" onclick="resetearFormulario()">Cancelar Edición</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-md-8">
+        <div class="card-custom p-4 shadow-sm">
+          <h5 class="fw-bold mb-3">Lista de Servicios Registrados</h5>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-dark">
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Descripción</th>
+                  <th>Precio</th>
+                  <th>Estado</th>
+                  <th class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-admin">
+                <tr><td colspan="6" class="text-center py-4">Cargando servicios...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_SERVICIOS = 'http://192.168.100.3:3000/api/servicios';
+    const token = localStorage.getItem('token');
+    const usuarioSesion = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+    if (!token || !usuarioSesion.documento) { window.location.href = 'login.html'; }
+
+    let listaServicios = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const esAdmin = usuarioSesion.rol && ['admin', 'administrador'].includes(usuarioSesion.rol.toLowerCase());
+      if (!esAdmin) { window.location.href = 'index.html'; return; }
+
+      const primerNombre = (usuarioSesion.nombre || usuarioSesion.nombreCompleto || 'Usuario').split(' ')[0];
+      document.getElementById('zona-usuario').innerHTML = `
+        <div class="dropdown">
+          <button class="btn btn-gold btn-sm dropdown-toggle fw-bold px-3 py-1" type="button" data-bs-toggle="dropdown">
+            ${primerNombre} <span class="badge bg-danger ms-1">Admin</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow">
+            <li><a class="dropdown-item fw-bold" href="configuracion.html">Configuración</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><button class="dropdown-item text-danger fw-bold" onclick="cerrarSesion()">Cerrar Sesión</button></li>
+          </ul>
+        </div>`;
+
+      cargarServiciosAdmin();
+    });
+
+    async function cargarServiciosAdmin() {
+      try {
+        const res = await axios.get(API_SERVICIOS);
+        listaServicios = res.data;
+        const tbody = document.getElementById('tabla-admin');
+        tbody.innerHTML = '';
+
+        if (!Array.isArray(listaServicios) || listaServicios.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No hay servicios registrados.</td></tr>';
+          return;
+        }
+
+        listaServicios.forEach(s => {
+          const id = s.idServicio || s.id;
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>#${id}</strong></td>
+              <td><strong>${s.nombre}</strong></td>
+              <td class="text-muted small">${s.descripcion || '-'}</td>
+              <td class="text-success fw-bold">$${Number(s.precio).toLocaleString('es-CO')}</td>
+              <td><span class="badge ${s.estado === 'Disponible' ? 'bg-success' : 'bg-secondary'}">${s.estado}</span></td>
+              <td class="text-center">
+                <button class="btn btn-outline-warning btn-sm fw-bold me-2 px-3" onclick="prepararEdicion(${id})">Editar</button>
+                <button class="btn btn-outline-danger btn-sm fw-bold px-3" onclick="eliminarServicio(${id})">Eliminar</button>
+              </td>
+            </tr>`;
+        });
+      } catch (err) { console.error(err); }
+    }
+
+    function prepararEdicion(id) {
+      const servicio = listaServicios.find(s => (s.idServicio || s.id) == id);
+      if (!servicio) return;
+
+      document.getElementById('idServicioEdit').value = id;
+      document.getElementById('nombre').value = servicio.nombre;
+      document.getElementById('descripcion').value = servicio.descripcion || '';
+      document.getElementById('precio').value = servicio.precio;
+      document.getElementById('estado').value = servicio.estado || 'Disponible';
+
+      document.getElementById('form-titulo').textContent = 'Editar Servicio #' + id;
+      document.getElementById('btn-submit').textContent = 'Actualizar Servicio';
+      document.getElementById('btn-cancelar').classList.remove('d-none');
+      document.getElementById('contenedor-formulario').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function resetearFormulario() {
+      document.getElementById('form-servicio').reset();
+      document.getElementById('idServicioEdit').value = '';
+      document.getElementById('form-titulo').textContent = 'Agregar Nuevo Servicio';
+      document.getElementById('btn-submit').textContent = 'Guardar Servicio';
+      document.getElementById('btn-cancelar').classList.add('d-none');
+    }
+
+    document.getElementById('form-servicio').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const idEdit = document.getElementById('idServicioEdit').value;
+      const servicioData = {
+        nombre: document.getElementById('nombre').value,
+        descripcion: document.getElementById('descripcion').value,
+        precio: document.getElementById('precio').value,
+        estado: document.getElementById('estado').value
+      };
+
+      try {
+        if (idEdit) {
+          await axios.put(`${API_SERVICIOS}/${idEdit}`, servicioData, { headers: { 'Authorization': `Bearer ${token}` } });
+        } else {
+          await axios.post(API_SERVICIOS, servicioData, { headers: { 'Authorization': `Bearer ${token}` } });
+        }
+        resetearFormulario();
+        cargarServiciosAdmin();
+      } catch (err) { alert('Error al procesar el servicio'); }
+    });
+
+    async function eliminarServicio(id) {
+      if (confirm('¿Desea eliminar este servicio?')) {
+        await axios.delete(`${API_SERVICIOS}/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        cargarServiciosAdmin();
+      }
+    }
+
+    function cerrarSesion() { if (confirm('¿Deseas cerrar tu sesión?')) { localStorage.clear(); window.location.href = 'login.html'; } }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Realizar Pago / Abono - Hotel Leyton</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Inter:wght@400;500;600;700&display=swap');
+    :root { --ink: #182530; --gold: #b68a35; --parchment: #f6f2e8; --paper: #ffffff; --slate: #32424b; --border: #e3dac5; }
+    body { background-color: var(--parchment); color: var(--slate); font-family: 'Inter', sans-serif; }
+    .navbar { background-color: var(--ink) !important; border-bottom: 3px solid var(--gold); }
+    .navbar-brand { font-family: 'Fraunces', serif; font-size: 1.5rem; }
+    .section-title { font-family: 'Fraunces', serif; font-weight: bold; color: var(--ink); }
+    .title-underline { width: 60px; height: 3px; background-color: var(--gold); margin-bottom: 25px; }
+    .btn-gold { background-color: var(--gold); color: #fff; font-weight: 600; border: none; }
+    .btn-gold:hover { background-color: #967027; color: #fff; }
+    .btn-admin-panel { background-color: transparent; color: var(--gold) !important; border: 1px solid var(--gold); font-weight: 700; }
+    .btn-admin-panel:hover { background-color: var(--gold); color: #fff !important; }
+    .dropdown-menu .dropdown-item { color: #182530 !important; }
+    .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html"><span style="color:#fff;">Hotel</span> <span style="color:var(--gold); font-style: italic;">Leyton</span></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center gap-2" id="menu-navegacion"></ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-5" style="max-width: 650px;">
+    <h2 class="section-title h3 mb-1">Realizar Pago o Abono</h2>
+    <div class="title-underline"></div>
+
+    <div class="bg-white p-4 border rounded shadow-sm">
+      <form id="pago-form">
+        <div class="mb-3">
+          <label for="idReserva" class="form-label fw-bold small">ID Reserva</label>
+          <input type="number" class="form-control" id="idReserva" placeholder="Ej: 1" required />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold small">Modalidad de Pago</label>
+          <div class="d-flex gap-2 mb-2">
+            <button type="button" class="btn btn-outline-success btn-sm w-50 fw-bold active" id="btn-pago-total" onclick="seleccionarModalidad('total')">Pagar Total Completo</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm w-50 fw-bold" id="btn-pago-abono" onclick="seleccionarModalidad('abono')">Realizar Abono Parcial</button>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="monto" class="form-label fw-bold small">Monto a Cancelar ($)</label>
+          <input type="number" step="0.01" min="1" class="form-control" id="monto" placeholder="0.00" required />
+        </div>
+
+        <div class="mb-4">
+          <label for="metodoPago" class="form-label fw-bold small">Método de Pago</label>
+          <select id="metodoPago" class="form-select" required>
+            <option value="" selected disabled>Selecciona un método</option>
+            <option value="Tarjeta">Tarjeta de Crédito / Débito</option>
+            <option value="Transferencia">Transferencia Bancaria / PSE</option>
+            <!-- La opción de Efectivo se inyectará dinámicamente solo si es Administrador -->
+          </select>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" id="btn-submit-pago" class="btn btn-gold px-4 py-2 fw-bold w-100">Confirmar y Procesar Pago</button>
+        </div>
+      </form>
+
+      <div id="mensaje" class="alert mt-4 d-none"></div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    const usuarioSesion = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+    if (!token || !usuarioSesion.documento) { window.location.href = 'login.html'; }
+
+    const esAdmin = usuarioSesion.rol && ['admin', 'administrador'].includes(usuarioSesion.rol.toLowerCase());
+    const API_URL = 'http://192.168.100.3:3004/api/pagos';
+    let montoOriginal = 0;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderizarNavegacion();
+      configurarMetodosPago();
+
+      const params = new URLSearchParams(window.location.search);
+      const idRes = params.get('idReserva');
+      const montoPre = params.get('monto');
+
+      if (idRes) document.getElementById('idReserva').value = idRes;
+      if (montoPre) {
+        montoOriginal = parseFloat(montoPre);
+        document.getElementById('monto').value = montoOriginal;
+      }
+    });
+
+    function configurarMetodosPago() {
+      const selectMetodo = document.getElementById('metodoPago');
+      // Si es administrador, agregamos la opción de efectivo presencial
+      if (esAdmin) {
+        selectMetodo.innerHTML += `<option value="Efectivo">Efectivo en Recepción (Admin)</option>`;
+      }
+    }
+
+    function seleccionarModalidad(tipo) {
+      const btnTotal = document.getElementById('btn-pago-total');
+      const btnAbono = document.getElementById('btn-pago-abono');
+      const inputMonto = document.getElementById('monto');
+
+      if (tipo === 'total') {
+        btnTotal.className = 'btn btn-success btn-sm w-50 fw-bold';
+        btnAbono.className = 'btn btn-outline-secondary btn-sm w-50 fw-bold';
+        if (montoOriginal > 0) inputMonto.value = montoOriginal;
+        inputMonto.readOnly = true;
+      } else {
+        btnAbono.className = 'btn btn-secondary btn-sm w-50 fw-bold';
+        btnTotal.className = 'btn btn-outline-success btn-sm w-50 fw-bold';
+        inputMonto.readOnly = false;
+        inputMonto.focus();
+      }
+    }
+
+    document.getElementById('pago-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const monto = document.getElementById('monto').value;
+      const metodoPago = document.getElementById('metodoPago').value;
+      const idReserva = document.getElementById('idReserva').value;
+      const mensaje = document.getElementById('mensaje');
+
+      fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ monto, metodoPago, idReserva })
+      })
+      .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al procesar el pago');
+        return data;
+      })
+      .then(data => {
+        mensaje.classList.remove('d-none', 'alert-danger');
+        mensaje.classList.add('alert-success');
+
+        mensaje.innerHTML = `<strong>¡Pago ejecutado con éxito!</strong><br>Comprobante generado correctamente. Redirigiendo...`;
+
+        setTimeout(() => { 
+          window.location.href = esAdmin ? 'gestion-reservas.html' : 'ver_reservas.html'; 
+        }, 1800);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        mensaje.classList.remove('d-none', 'alert-success');
+        mensaje.classList.add('alert-danger');
+        mensaje.textContent = error.message;
+      });
+    });
+
+    function renderizarNavegacion() {
+      const menu = document.getElementById('menu-navegacion');
+      if (esAdmin) {
+        menu.innerHTML = '<li class="nav-item dropdown">' +
+            '<a class="nav-link dropdown-toggle active fw-semibold" href="#" role="button" data-bs-toggle="dropdown">Vista Cliente</a>' +
+            '<ul class="dropdown-menu shadow">' +
+              '<li><a class="dropdown-item" href="index.html">Inicio</a></li>' +
+              '<li><a class="dropdown-item" href="ver_habitaciones.html">Catálogo</a></li>' +
+              '<li><a class="dropdown-item" href="ver_servicios.html">Servicios</a></li>' +
+              '<li><a class="dropdown-item" href="disponibilidad.html">Disponibilidad</a></li>' +
+              '<li><a class="dropdown-item active" href="menu_pagos.html">Pagos</a></li>' +
+              '<li><a class="dropdown-item" href="ver_reservas.html">Mis Reservas</a></li>' +
+            '</ul>' +
+          '</li>' +
+          '<li class="nav-item dropdown">' +
+            '<button class="btn btn-sm btn-admin-panel dropdown-toggle px-3 py-1" type="button" data-bs-toggle="dropdown">Administración</button>' +
+            '<ul class="dropdown-menu shadow">' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="gestion-reservas.html">Gestión de Reservas</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="editar_habitacion.html">Gestión de Habitaciones</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="editar_servicios.html">Gestión de Servicios</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="editar_pagos.html">Gestión de Pagos</a></li>' +
+              '<li><hr class="dropdown-divider"></li>' +
+              '<li><a class="dropdown-item fw-bold text-primary" href="usuarios.html">Gestión de Usuarios</a></li>' +
+            '</ul>' +
+          '</li>' +
+          '<li class="nav-item ms-lg-2" id="zona-usuario"></li>';
+      } else {
+        menu.innerHTML = '<li class="nav-item"><a class="nav-link" href="index.html">Inicio</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="ver_habitaciones.html">Catálogo</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="ver_servicios.html">Servicios</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="disponibilidad.html">Disponibilidad</a></li>' +
+          '<li class="nav-item"><a class="nav-link active" href="menu_pagos.html">Pagos</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="ver_reservas.html">Mis Reservas</a></li>' +
+          '<li class="nav-item ms-lg-2" id="zona-usuario"></li>';
+      }
+
+      const primerNombre = (usuarioSesion.nombre || usuarioSesion.nombreCompleto || 'Usuario').split(' ')[0];
+      document.getElementById('zona-usuario').innerHTML = '<div class="dropdown">' +
+          '<button class="btn btn-gold btn-sm dropdown-toggle fw-bold px-3 py-1" type="button" data-bs-toggle="dropdown">' + primerNombre + (esAdmin ? ' <span class="badge bg-danger ms-1">Admin</span>' : '') + '</button>' +
+          '<ul class="dropdown-menu dropdown-menu-end shadow">' +
+            '<li><a class="dropdown-item fw-bold" href="configuracion.html">Configuración</a></li>' +
+            '<li><hr class="dropdown-divider"></li>' +
+            '<li><button class="dropdown-item text-danger fw-bold" onclick="cerrarSesion()">Cerrar Sesión</button></li>' +
+          '</ul>' +
+        '</div>';
+    }
+
+    function cerrarSesion() {
+      if (confirm('¿Deseas cerrar tu sesión?')) {
+        localStorage.clear();
+        window.location.href = 'login.html';
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hotel Leyton - Eliminar Pago</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Inter:wght@400;500;600;700&display=swap');
+    :root { --ink: #182530; --gold: #b68a35; --parchment: #f6f2e8; --paper: #ffffff; --slate: #32424b; --border: #e3dac5; }
+    body { background-color: var(--parchment); color: var(--slate); font-family: 'Inter', sans-serif; }
+    .navbar { background-color: var(--ink) !important; border-bottom: 3px solid var(--gold); }
+    .navbar-brand { font-family: 'Fraunces', serif; font-size: 1.5rem; }
+    .section-title { font-family: 'Fraunces', serif; font-weight: bold; color: var(--ink); }
+    .title-underline { width: 60px; height: 3px; background-color: var(--gold); margin-bottom: 25px; }
+    .card-custom { background: var(--paper); border: 1px solid var(--border); border-radius: 8px; }
+    .btn-gold { background-color: var(--gold); color: #fff; font-weight: 600; border: none; }
+    .btn-gold:hover { background-color: #967027; color: #fff; }
+    .dropdown-menu .dropdown-item { color: #182530 !important; } 
+    .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
+  </style>
+
+  <style>
+    .btn-admin-panel { background-color: transparent; color: #b68a35 !important; border: 1px solid #b68a35; font-weight: 700; }
+    .btn-admin-panel:hover { background-color: #b68a35; color: #fff !important; }
+    .dropdown-menu .dropdown-item { color: #182530 !important; } 
+    .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
+  </style>
+
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html"><span style="color:#fff; font-style: italic;">Hotel</span> <span style="color:var(--gold);">Leyton</span></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center gap-2" id="menu-navegacion">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="dropCliente" role="button" data-bs-toggle="dropdown">Vista Cliente</a>
+            <ul class="dropdown-menu shadow">
+              <li><a class="dropdown-item" href="index.html">Inicio</a></li>
+              <li><a class="dropdown-item" href="ver_habitaciones.html">Catálogo</a></li>
+              <li><a class="dropdown-item" href="ver_servicios.html">Servicios</a></li>
+              <li><a class="dropdown-item" href="disponibilidad.html">Disponibilidad</a></li>
+              <li><a class="dropdown-item" href="menu_pagos.html">Pagos</a></li>
+            </ul>
+          </li>
+          <li class="nav-item"><a class="nav-link text-warning fw-bold" href="gestion-reservas.html">Gestión Reservas</a></li>
+          <li class="nav-item"><a class="nav-link text-warning fw-bold" href="editar_habitacion.html">Editar Habitaciones</a></li>
+          <li class="nav-item"><a class="nav-link text-warning fw-bold" href="editar_servicios.html">Editar Servicios</a></li>
+          <li class="nav-item"><a class="nav-link active text-warning fw-bold" href="editar_pagos.html">Editar Pagos</a></li>
+          <li class="nav-item ms-lg-3 mt-2 mt-lg-0" id="zona-usuario"></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-5">
+    <h2 class="section-title h3 mb-1">Eliminar / Anular Registro de Pago</h2>
+    <div class="title-underline"></div>
+
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card-custom p-4 shadow-sm mb-4">
+          <form id="buscar-form" class="row g-2">
+            <div class="col-8"><input type="number" id="idBuscar" class="form-control" placeholder="Ingrese ID Pago" required /></div>
+            <div class="col-4"><button type="submit" class="btn btn-gold w-100 fw-bold">Buscar</button></div>
+          </form>
+        </div>
+
+        <div id="mensaje" class="alert d-none"></div>
+
+        <div id="resultado" class="card-custom p-4 shadow-sm d-none">
+          <h5 class="fw-bold mb-3 border-bottom pb-2 text-danger">Confirmar Anulación de Pago</h5>
+          <table class="table table-borderless table-sm mb-4">
+            <tbody>
+              <tr><th class="text-muted">ID Pago:</th><td id="r-id" class="fw-bold"></td></tr>
+              <tr><th class="text-muted">Monto:</th><td id="r-monto" class="text-success fw-bold"></td></tr>
+              <tr><th class="text-muted">Método:</th><td id="r-metodo"></td></tr>
+              <tr><th class="text-muted">Estado:</th><td id="r-estado"></td></tr>
+              <tr><th class="text-muted">ID Reserva:</th><td id="r-reserva" class="fw-bold"></td></tr>
+            </tbody>
+          </table>
+          <button type="button" class="btn btn-danger w-100 fw-bold" id="btn-eliminar">Confirmar Eliminación</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://192.168.100.3:3004/api/pagos';
+    const token = localStorage.getItem('token');
+    const usuarioSesion = JSON.parse(localStorage.getItem('usuario'));
+    let idActual = null;
+
+    if (!token || !usuarioSesion) { window.location.href = 'login.html'; }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const esAdmin = usuarioSesion.rol && ['admin', 'administrador'].includes(usuarioSesion.rol.toLowerCase());
+      if (!esAdmin) { window.location.href = 'index.html'; return; }
+
+      document.getElementById('zona-usuario').innerHTML = `
+        <div class="dropdown">
+          <button class="btn btn-gold btn-sm dropdown-toggle fw-bold px-3" type="button" data-bs-toggle="dropdown">
+            ${usuarioSesion.nombre || usuarioSesion.nombreCompleto} <span class="badge bg-danger ms-1">Admin</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow">
+            <li><a class="dropdown-item fw-bold" href="configuracion.html">Configuración</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><button class="dropdown-item text-danger fw-bold" onclick="cerrarSesion()">Cerrar Sesión</button></li>
+          </ul>
+        </div>`;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const idParam = urlParams.get('id');
+      if (idParam) {
+        document.getElementById('idBuscar').value = idParam;
+        buscarPago(idParam);
+      }
+    });
+
+    document.getElementById('buscar-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      buscarPago(document.getElementById('idBuscar').value);
+    });
+
+    function buscarPago(id) {
+      fetch(`${API_URL}/${id}`, { headers: { 'Authorization': `Bearer ${token}` } })
+        .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+        .then(pago => {
+          idActual = pago.idPago;
+          document.getElementById('r-id').textContent = '#' + pago.idPago;
+          document.getElementById('r-monto').textContent = '$' + Number(pago.monto).toLocaleString('es-CO');
+          document.getElementById('r-metodo').textContent = pago.metodoPago || '-';
+          document.getElementById('r-estado').textContent = pago.estado || 'Exitoso';
+          document.getElementById('r-reserva').textContent = '#' + pago.idReserva;
+          document.getElementById('resultado').classList.remove('d-none');
+          document.getElementById('mensaje').classList.add('d-none');
+        })
+        .catch(() => {
+          document.getElementById('resultado').classList.add('d-none');
+          const msg = document.getElementById('mensaje');
+          msg.className = 'alert alert-danger';
+          msg.textContent = 'No se encontró ningún pago con ese ID.';
+        });
+    }
+
+    document.getElementById('btn-eliminar').addEventListener('click', () => {
+      if (!idActual) return;
+      if (confirm(`¿Está seguro de eliminar permanentemente el pago #${idActual}?`)) {
+        fetch(`${API_URL}/${idActual}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(() => {
+          document.getElementById('resultado').classList.add('d-none');
+          const msg = document.getElementById('mensaje');
+          msg.className = 'alert alert-success';
+          msg.textContent = 'Pago eliminado exitosamente.';
+          idActual = null;
+        });
+      }
+    });
+
+    function cerrarSesion() { if (confirm('¿Deseas cerrar tu sesión?')) { localStorage.clear(); window.location.href = 'login.html'; } }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  
+
+<script src="js/nav.js"></script>
+</body>
+</html>

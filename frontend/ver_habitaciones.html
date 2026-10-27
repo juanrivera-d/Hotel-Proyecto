@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hotel Leyton - Catálogo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Inter:wght@400;500;600;700&display=swap');
+    :root { --ink: #182530; --gold: #b68a35; --parchment: #f6f2e8; --paper: #ffffff; --slate: #32424b; --border: #e3dac5; }
+    body { background-color: var(--parchment); color: var(--slate); font-family: 'Inter', sans-serif; }
+    .navbar { background-color: var(--ink) !important; border-bottom: 3px solid var(--gold); }
+    .navbar-brand { font-family: 'Fraunces', serif; font-size: 1.5rem; }
+    .section-title { font-family: 'Fraunces', serif; font-weight: bold; color: var(--ink); }
+    .title-underline { width: 60px; height: 3px; background-color: var(--gold); margin-bottom: 25px; }
+    
+    .tipo-card { background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .tipo-card img { width: 100%; height: 160px; object-fit: cover; }
+    .tipo-card-body { padding: 15px; border-top: 3px solid var(--gold); text-align: center; }
+
+    .btn-gold { background-color: var(--gold); color: #fff; font-weight: 600; border: none; }
+    .btn-gold:hover { background-color: #967027; color: #fff; }
+    .btn-admin-panel { background-color: transparent; color: var(--gold) !important; border: 1px solid var(--gold); font-weight: 700; }
+    .btn-admin-panel:hover { background-color: var(--gold); color: #fff !important; }
+    .dropdown-menu .dropdown-item { color: #182530 !important; } 
+    .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html"><span style="color:#fff;">Hotel</span> <span style="color:var(--gold); font-style: italic;">Leyton</span></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center gap-2" id="menu-navegacion"></ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-5">
+    <h2 class="section-title h3 mb-1">Catálogo de Habitaciones</h2>
+    <div class="title-underline"></div>
+
+    <!-- CARDS SUPERIORES POR CATEGORIA -->
+    <div class="row row-cols-1 row-cols-md-4 g-4 mb-5">
+      <div class="col">
+        <div class="tipo-card shadow-sm">
+          <img src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=600&q=80" alt="Sencilla">
+          <div class="tipo-card-body"><h5 class="fw-bold mb-0">Sencilla</h5></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="tipo-card shadow-sm">
+          <img src="https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=600&q=80" alt="Doble">
+          <div class="tipo-card-body"><h5 class="fw-bold mb-0">Doble</h5></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="tipo-card shadow-sm">
+          <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=600&q=80" alt="Suite">
+          <div class="tipo-card-body"><h5 class="fw-bold mb-0">Suite</h5></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="tipo-card shadow-sm">
+          <img src="https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=600&q=80" alt="Penthouse">
+          <div class="tipo-card-body"><h5 class="fw-bold mb-0">Penthouse</h5></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA CON FILTRO -->
+    <div class="bg-white p-4 border rounded shadow-sm">
+      <div class="row align-items-center mb-3">
+        <div class="col-md-6">
+          <label for="filtroTipo" class="form-label fw-bold mb-0">Filtrar por Tipo:</label>
+          <select id="filtroTipo" class="form-select mt-1" onchange="cargarHabitaciones()">
+            <option value="">Todas las habitaciones</option>
+            <option value="Sencilla">Sencilla</option>
+            <option value="Doble">Doble</option>
+            <option value="Suite">Suite</option>
+            <option value="Penthouse">Penthouse</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-dark">
+            <tr><th>N° Habitación</th><th>Tipo</th><th>Capacidad</th><th>Precio Noche</th><th>Descripción</th><th class="text-center">Acción</th></tr>
+          </thead>
+          <tbody id="tabla-habitaciones"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_HABITACIONES = 'http://192.168.100.3:3002/api/habitaciones';
+    const token = localStorage.getItem('token');
+    const usuarioSesion = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+    if (!token || !usuarioSesion.documento) { window.location.href = 'login.html'; }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderizarNavegacion();
+      cargarHabitaciones();
+    });
+
+    async function cargarHabitaciones() {
+      try {
+        const tipo = document.getElementById('filtroTipo').value;
+        const url = tipo ? `${API_HABITACIONES}?tipo=${tipo}` : API_HABITACIONES;
+        const res = await axios.get(url);
+        const tbody = document.getElementById('tabla-habitaciones');
+        tbody.innerHTML = '';
+        const datos = Array.isArray(res.data) ? res.data : (res.data.habitaciones || []);
+
+        if (datos.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No hay habitaciones registradas.</td></tr>';
+          return;
+        }
+
+        datos.forEach(h => {
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>Habitación ${h.numeroHabitacion}</strong></td>
+              <td><span class="badge bg-secondary">${h.tipo}</span></td>
+              <td>${h.capacidad} persona(s)</td>
+              <td class="text-success fw-bold">$${Number(h.precioNoche).toLocaleString('es-CO')}</td>
+              <td class="text-muted">${h.descripcion || 'Sin descripción'}</td>
+              <td class="text-center"><a href="crear_reserva.html?idHabitacion=${h.idHabitacion}" class="btn btn-gold btn-sm">Reservar</a></td>
+            </tr>`;
+        });
+      } catch (err) {
+        console.error('Error al cargar habitaciones:', err);
+      }
+    }
+
+    function renderizarNavegacion() {
+      const esAdmin = usuarioSesion.rol && ['admin', 'administrador'].includes(usuarioSesion.rol.toLowerCase());
+      const menu = document.getElementById('menu-navegacion');
+      if (esAdmin) {
+        menu.innerHTML = `
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle active fw-semibold" href="#" role="button" data-bs-toggle="dropdown">Vista Cliente</a>
+            <ul class="dropdown-menu shadow">
+              <li><a class="dropdown-item" href="index.html">Inicio</a></li>
+              <li><a class="dropdown-item active" href="ver_habitaciones.html">Catálogo</a></li>
+              <li><a class="dropdown-item" href="ver_servicios.html">Servicios</a></li>
+              <li><a class="dropdown-item" href="disponibilidad.html">Disponibilidad</a></li>
+              <li><a class="dropdown-item" href="menu_pagos.html">Pagos</a></li>
+              <li><a class="dropdown-item" href="ver_reservas.html">Mis Reservas</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <button class="btn btn-sm btn-admin-panel dropdown-toggle px-3 py-1" type="button" data-bs-toggle="dropdown">Administración ⚙️</button>
+            <ul class="dropdown-menu shadow">
+              <li><a class="dropdown-item fw-bold text-dark" href="gestion-reservas.html">Gestión de Reservas</a></li>
+              <li><a class="dropdown-item fw-bold text-dark" href="editar_habitacion.html">Gestión de Habitaciones</a></li>
+              <li><a class="dropdown-item fw-bold text-dark" href="editar_servicios.html">Gestión de Servicios</a></li>
+              <li><a class="dropdown-item fw-bold text-dark" href="editar_pagos.html">Gestión de Pagos</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item fw-bold text-primary" href="usuarios.html">Gestión de Usuarios</a></li>
+            </ul>
+          </li>
+          <li class="nav-item ms-lg-2" id="zona-usuario"></li>`;
+      } else {
+        menu.innerHTML = `
+          <li class="nav-item"><a class="nav-link" href="index.html">Inicio</a></li>
+          <li class="nav-item"><a class="nav-link active" href="ver_habitaciones.html">Catálogo</a></li>
+          <li class="nav-item"><a class="nav-link" href="ver_servicios.html">Servicios</a></li>
+          <li class="nav-item"><a class="nav-link" href="disponibilidad.html">Disponibilidad</a></li>
+          <li class="nav-item"><a class="nav-link" href="menu_pagos.html">Pagos</a></li>
+          <li class="nav-item"><a class="nav-link" href="ver_reservas.html">Mis Reservas</a></li>
+          <li class="nav-item ms-lg-2" id="zona-usuario"></li>`;
+      }
+
+      const primerNombre = (usuarioSesion.nombre || usuarioSesion.nombreCompleto || 'Usuario').split(' ')[0];
+      document.getElementById('zona-usuario').innerHTML = `
+        <div class="dropdown">
+          <button class="btn btn-gold btn-sm dropdown-toggle fw-bold px-3 py-1" type="button" data-bs-toggle="dropdown">${primerNombre} ${esAdmin ? '<span class="badge bg-danger ms-1">Admin</span>' : ''}</button>
+          <ul class="dropdown-menu shadow">
+            <li><a class="dropdown-item fw-bold" href="configuracion.html">Configuración</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><button class="dropdown-item text-danger fw-bold" onclick="cerrarSesion()">Cerrar Sesión</button></li>
+          </ul>
+        </div>`;
+    }
+    function cerrarSesion() { if (confirm('¿Deseas cerrar tu sesión?')) { localStorage.clear(); window.location.href = 'login.html'; } }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

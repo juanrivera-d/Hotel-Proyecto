@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Pagos (Admin) - Hotel Leyton</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+      --ink: #182530;
+      --gold: #b68a35;
+      --gold-dark: #967027;
+      --gold-light: #f4ead3;
+      --parchment: #f6f2e8;
+      --paper: #ffffff;
+      --slate: #32424b;
+      --border: #e3dac5;
+      --navy: #1d2933;
+      --navy-soft: #344451;
+      --red: #e63946;
+      --red-light: #fde8ea;
+      --green: #168653;
+      --green-light: #e7f6ee;
+      --gray: #6d747b;
+      --line: #e8e5de;
+      --shadow: 0 10px 30px rgba(31, 41, 51, 0.08);
+    }
+
+    body { background-color: var(--parchment); color: var(--slate); font-family: "Inter", sans-serif; }
+
+    /* NAVBAR HOTEL LEYTON */
+    .navbar { background-color: var(--ink) !important; border-bottom: 3px solid var(--gold); }
+    .navbar-brand { font-family: 'Fraunces', serif; font-size: 1.5rem; }
+    .btn-gold { background-color: var(--gold); color: #fff; font-weight: 600; border: none; }
+    .btn-gold:hover { background-color: var(--gold-dark); color: #fff; }
+    .btn-admin-panel { background-color: transparent; color: var(--gold) !important; border: 1px solid var(--gold); font-weight: 700; }
+    .btn-admin-panel:hover { background-color: var(--gold); color: #fff !important; }
+
+    /* CONTENEDOR PRINCIPAL */
+    .page {
+      width: min(1350px, calc(100% - 64px));
+      margin: 0 auto;
+      padding: 40px 0 60px;
+    }
+
+    .heading {
+      position: relative;
+      padding-bottom: 12px;
+      margin-bottom: 28px;
+    }
+
+    .heading h1 {
+      margin: 0;
+      font-family: 'Fraunces', serif;
+      font-size: clamp(2rem, 3vw, 2.55rem);
+      line-height: 1;
+      color: var(--navy);
+    }
+
+    .heading p {
+      margin: 10px 0 0;
+      color: var(--gray);
+      font-size: 0.94rem;
+    }
+
+    .heading::after {
+      content: "";
+      position: absolute;
+      left: 0; bottom: 0;
+      width: 74px; height: 3px;
+      border-radius: 10px;
+      background: var(--gold);
+    }
+
+    /* BOTONES DE ACCIÓN EN TABLA */
+    .btn-accion-editar {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      font-weight: 650;
+      color: var(--gold-dark);
+      background: var(--gold-light);
+      border: 1px solid rgba(182, 138, 53, 0.35);
+      border-radius: 6px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .btn-accion-editar:hover {
+      background: var(--gold);
+      color: white;
+      border-color: var(--gold);
+    }
+
+    .btn-accion-eliminar {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      font-weight: 650;
+      color: var(--red);
+      background: var(--red-light);
+      border: 1px solid rgba(230, 57, 70, 0.3);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-accion-eliminar:hover {
+      background: var(--red);
+      color: white;
+      border-color: var(--red);
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 92px;
+      padding: 5px 11px;
+      border-radius: 7px;
+      font-size: 0.78rem;
+      font-weight: 750;
+    }
+    .status.confirmed { background: var(--green-light); color: var(--green); }
+
+    /* TABLA PRINCIPAL */
+    .table-card {
+      background: var(--paper);
+      border: 1px solid rgba(31, 41, 51, 0.06);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .table-wrapper { overflow-x: auto; padding: 18px; }
+    table { width: 100%; min-width: 950px; border-collapse: separate; border-spacing: 0; }
+    thead th { background: var(--navy); color: white; padding: 15px 14px; font-size: 0.84rem; font-weight: 700; text-align: left; }
+    thead th:first-child { border-radius: 8px 0 0 8px; }
+    thead th:last-child { border-radius: 0 8px 8px 0; text-align: center; }
+    tbody td { padding: 15px 14px; border-bottom: 1px solid var(--line); font-size: 0.92rem; vertical-align: middle; }
+    tbody tr:hover { background: #faf9f5; }
+    .dropdown-menu .dropdown-item { color: #182530 !important; } 
+    .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR HOTEL LEYTON -->
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html"><span style="color:#fff;">Hotel</span> <span style="color:var(--gold); font-style: italic;">Leyton</span></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center gap-2" id="menu-navegacion"></ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page">
+    <div class="heading">
+      <h1>Panel de Administración: Gestión de Pagos</h1>
+      <p>Visualiza, edita o elimina los comprobantes registrados en el sistema de manera centralizada.</p>
+    </div>
+
+    <div class="table-card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th class="text-center">ID Pago</th>
+              <th class="text-center">Reserva</th>
+              <th class="text-end">Monto Abonado</th>
+              <th class="text-center">Método</th>
+              <th class="text-center">Estado</th>
+              <th class="text-center">Acciones de Gestión</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-gestion-pagos">
+            <tr><td colspan="6" class="text-center text-muted py-4">Cargando pagos del sistema...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL DE EDICIÓN RÁPIDA -->
+  <div class="modal fade" id="modalEditarPago" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-dark text-white" style="border-bottom: 3px solid var(--gold);">
+          <h5 class="modal-title font-serif">Editar Pago <span id="edit-pago-id-title"></span></h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="form-editar-pago" onsubmit="guardarEdicionPago(event)">
+            <input type="hidden" id="edit-idPago">
+            
+            <div class="mb-3">
+              <label class="form-label fw-bold text-secondary small text-uppercase">ID de Reserva Asociada</label>
+              <input type="number" class="form-control" id="edit-idReserva" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold text-secondary small text-uppercase">Monto del Abono ($)</label>
+              <input type="number" class="form-control" id="edit-monto" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold text-secondary small text-uppercase">Método de Pago</label>
+              <select class="form-select" id="edit-metodoPago" required>
+                <option value="Tarjeta">Tarjeta</option>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Transferencia">Transferencia</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold text-secondary small text-uppercase">Estado</label>
+              <select class="form-select" id="edit-estado" required>
+                <option value="Exitoso">Exitoso</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Rechazado">Rechazado</option>
+              </select>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+              <button type="button" class="btn btn-secondary btn-sm px-3 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-gold btn-sm px-3 fw-bold">Guardar Cambios</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    const usuarioSesion = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+    if (!token || !usuarioSesion.documento) { window.location.href = 'login.html'; }
+
+    let modalEditarBs = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderizarNavegacion();
+      modalEditarBs = new bootstrap.Modal(document.getElementById('modalEditarPago'));
+      cargarTodosLosPagosAdmin();
+    });
+
+    async function cargarTodosLosPagosAdmin() {
+      const tbody = document.getElementById('tabla-gestion-pagos');
+      try {
+        const res = await axios.get('http://192.168.100.3:3004/api/pagos', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const pagos = Array.isArray(res.data) ? res.data : (res.data.pagos || []);
+        tbody.innerHTML = '';
+
+        if (pagos.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No existen pagos registrados en el sistema.</td></tr>';
+          return;
+        }
+
+        pagos.forEach(p => {
+          tbody.innerHTML += `
+            <tr>
+              <td class="text-center fw-bold text-dark">#${p.idPago}</td>
+              <td class="text-center text-muted">Reserva #${p.idReserva}</td>
+              <td class="text-end text-success fw-bold">$${Number(p.monto).toLocaleString('es-CO')}</td>
+              <td class="text-center">${p.metodoPago}</td>
+              <td class="text-center"><span class="status confirmed">${p.estado || 'Exitoso'}</span></td>
+              <td class="text-center">
+                <div class="d-flex justify-content-center gap-2">
+                  <button class="btn-accion-editar" onclick="abrirEdicion(${p.idPago})">
+                    ✏️ Editar
+                  </button>
+                  <button class="btn-accion-eliminar" onclick="eliminarPago(${p.idPago})">
+                    🗑️ Eliminar
+                  </button>
+                </div>
+              </td>
+            </tr>`;
+        });
+      } catch (err) {
+        console.error('Error al cargar gestión de pagos:', err);
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Error al consultar los pagos globales del servidor.</td></tr>';
+      }
+    }
+
+    async function abrirEdicion(idPago) {
+      try {
+        const res = await axios.get(`http://192.168.100.3:3004/api/pagos/${idPago}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const p = res.data;
+
+        document.getElementById('edit-idPago').value = p.idPago;
+        document.getElementById('edit-pago-id-title').textContent = `#${p.idPago}`;
+        document.getElementById('edit-idReserva').value = p.idReserva;
+        document.getElementById('edit-monto').value = p.monto;
+        document.getElementById('edit-metodoPago').value = p.metodoPago || 'Tarjeta';
+        document.getElementById('edit-estado').value = p.estado || 'Exitoso';
+
+        modalEditarBs.show();
+      } catch (e) {
+        alert('No se pudo cargar la información del pago para editar.');
+      }
+    }
+
+    async function guardarEdicionPago(event) {
+      event.preventDefault();
+      const idPago = document.getElementById('edit-idPago').value;
+      const datosActualizados = {
+        idReserva: document.getElementById('edit-idReserva').value,
+        monto: document.getElementById('edit-monto').value,
+        metodoPago: document.getElementById('edit-metodoPago').value,
+        estado: document.getElementById('edit-estado').value
+      };
+
+      try {
+        await axios.put(`http://192.168.100.3:3004/api/pagos/${idPago}`, datosActualizados, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        modalEditarBs.hide();
+        alert('¡Pago actualizado exitosamente!');
+        cargarTodosLosPagosAdmin();
+      } catch (err) {
+        console.error('Error al actualizar:', err);
+        alert('Error al guardar los cambios del pago.');
+      }
+    }
+
+    async function eliminarPago(idPago) {
+      if (confirm(`¿Estás seguro de que deseas eliminar el registro de pago #${idPago}?`)) {
+        try {
+          await axios.delete(`http://192.168.100.3:3004/api/pagos/${idPago}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          alert('Comprobante de pago eliminado correctamente.');
+          cargarTodosLosPagosAdmin();
+        } catch (err) {
+          console.error('Error al eliminar:', err);
+          alert('No se pudo eliminar el pago del sistema.');
+        }
+      }
+    }
+
+    function renderizarNavegacion() {
+      const esAdmin = usuarioSesion.rol && ['admin', 'administrador'].includes(usuarioSesion.rol.toLowerCase());
+      const menu = document.getElementById('menu-navegacion');
+      if (esAdmin) {
+        menu.innerHTML = '<li class="nav-item dropdown">' +
+            '<a class="nav-link dropdown-toggle fw-semibold" href="#" role="button" data-bs-toggle="dropdown">Vista Cliente</a>' +
+            '<ul class="dropdown-menu shadow">' +
+              '<li><a class="dropdown-item" href="index.html">Inicio</a></li>' +
+              '<li><a class="dropdown-item" href="ver_habitaciones.html">Catálogo</a></li>' +
+              '<li><a class="dropdown-item" href="ver_servicios.html">Servicios</a></li>' +
+              '<li><a class="dropdown-item" href="disponibilidad.html">Disponibilidad</a></li>' +
+              '<li><a class="dropdown-item" href="menu_pagos.html">Pagos</a></li>' +
+              '<li><a class="dropdown-item" href="ver_reservas.html">Mis Reservas</a></li>' +
+            '</ul>' +
+          '</li>' +
+          '<li class="nav-item dropdown">' +
+            '<button class="btn btn-sm btn-admin-panel dropdown-toggle px-3 py-1 active" type="button" data-bs-toggle="dropdown">Administración ⚙️</button>' +
+            '<ul class="dropdown-menu shadow">' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="gestion-reservas.html">Gestión de Reservas</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="editar_habitacion.html">Gestión de Habitaciones</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="editar_servicios.html">Gestión de Servicios</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark active" href="editar_pagos.html">Gestión de Pagos</a></li>' +
+              '<li><hr class="dropdown-divider"></li>' +
+              '<li><a class="dropdown-item fw-bold text-primary" href="usuarios.html">Gestión de Usuarios</a></li>' +
+            '</ul>' +
+          '</li>' +
+          '<li class="nav-item ms-lg-2" id="zona-usuario"></li>';
+      } else {
+        menu.innerHTML = '<li class="nav-item"><a class="nav-link" href="index.html">Inicio</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="ver_habitaciones.html">Catálogo</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="ver_servicios.html">Servicios</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="disponibilidad.html">Disponibilidad</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="menu_pagos.html">Pagos</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="ver_reservas.html">Mis Reservas</a></li>' +
+          '<li class="nav-item ms-lg-2" id="zona-usuario"></li>';
+      }
+
+      const primerNombre = (usuarioSesion.nombre || usuarioSesion.nombreCompleto || 'Usuario').split(' ')[0];
+      document.getElementById('zona-usuario').innerHTML = '<div class="dropdown">' +
+          '<button class="btn btn-gold btn-sm dropdown-toggle fw-bold px-3 py-1" type="button" data-bs-toggle="dropdown">' + primerNombre + (esAdmin ? ' <span class="badge bg-danger ms-1">Admin</span>' : '') + '</button>' +
+          '<ul class="dropdown-menu dropdown-menu-end shadow">' +
+            '<li><a class="dropdown-item fw-bold" href="configuracion.html">Configuración</a></li>' +
+            '<li><hr class="dropdown-divider"></li>' +
+            '<li><button class="dropdown-item text-danger fw-bold" onclick="cerrarSesion()">Cerrar Sesión</button></li>' +
+          '</ul>' +
+        '</div>';
+    }
+
+    function cerrarSesion() {
+      if (confirm('¿Deseas cerrar tu sesión?')) {
+        localStorage.clear();
+        window.location.href = 'login.html';
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

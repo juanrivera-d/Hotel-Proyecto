@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hotel Leyton - Gestión de Usuarios</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Inter:wght@400;500;600;700&display=swap');
+    :root { --ink: #182530; --gold: #b68a35; --parchment: #f6f2e8; --paper: #ffffff; --slate: #32424b; --border: #e3dac5; }
+    body { background-color: var(--parchment); color: var(--slate); font-family: 'Inter', sans-serif; }
+    .navbar { background-color: var(--ink) !important; border-bottom: 3px solid var(--gold); }
+    .navbar-brand { font-family: 'Fraunces', serif; font-size: 1.5rem; }
+    .section-title { font-family: 'Fraunces', serif; font-weight: bold; color: var(--ink); }
+    .title-underline { width: 60px; height: 3px; background-color: var(--gold); margin-bottom: 25px; }
+    .btn-gold { background-color: var(--gold); color: #fff; font-weight: 600; border: none; }
+    .btn-gold:hover { background-color: #967027; color: #fff; }
+    .btn-admin-panel { background-color: transparent; color: #b68a35 !important; border: 1px solid #b68a35; font-weight: 700; }
+    .btn-admin-panel:hover { background-color: #b68a35; color: #fff !important; }
+    .dropdown-menu .dropdown-item { color: #182530 !important; } 
+    .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html"><span style="color:#fff;">Hotel</span> <span style="color:var(--gold); font-style: italic;">Leyton</span></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center gap-2" id="menu-navegacion">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle fw-semibold" href="#" role="button" data-bs-toggle="dropdown">Vista Cliente</a>
+            <ul class="dropdown-menu shadow">
+              <li><a class="dropdown-item" href="index.html">Inicio</a></li>
+              <li><a class="dropdown-item" href="ver_habitaciones.html">Catálogo</a></li>
+              <li><a class="dropdown-item" href="ver_servicios.html">Servicios</a></li>
+              <li><a class="dropdown-item" href="disponibilidad.html">Disponibilidad</a></li>
+              <li><a class="dropdown-item" href="menu_pagos.html">Pagos</a></li>
+              <li><a class="dropdown-item" href="ver_reservas.html">Mis Reservas</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <button class="btn btn-sm btn-admin-panel dropdown-toggle px-3 py-1 active" type="button" data-bs-toggle="dropdown">Administración</button>
+            <ul class="dropdown-menu shadow">
+              <li><a class="dropdown-item fw-bold text-dark" href="gestion-reservas.html">Gestión de Reservas</a></li>
+              <li><a class="dropdown-item fw-bold text-dark" href="editar_habitacion.html">Gestión de Habitaciones</a></li>
+              <li><a class="dropdown-item fw-bold text-dark" href="editar_servicios.html">Gestión de Servicios</a></li>
+              <li><a class="dropdown-item fw-bold text-dark" href="editar_pagos.html">Gestión de Pagos</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item fw-bold text-primary active" href="usuarios.html">Gestión de Usuarios</a></li>
+            </ul>
+          </li>
+          <li class="nav-item ms-lg-2" id="zona-usuario"></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-5">
+    <h2 class="section-title h3 mb-1">Gestión Global de Usuarios</h2>
+    <div class="title-underline"></div>
+
+    <div class="row g-4">
+      <!-- BUSCADOR -->
+      <div class="col-12">
+        <div class="bg-white p-3 border rounded shadow-sm d-flex gap-3 align-items-center flex-wrap">
+          <div class="d-flex align-items-center gap-2">
+            <label class="fw-bold small mb-0">ID:</label>
+            <input type="number" id="buscarId" class="form-control form-control-sm" placeholder="Ej: 1" style="width: 120px;">
+            <button onclick="buscarPorId()" class="btn btn-sm btn-gold">Buscar</button>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <label class="fw-bold small mb-0">Documento:</label>
+            <input type="text" id="buscarDocumento" class="form-control form-control-sm" placeholder="Ej: 100101" style="width: 150px;">
+            <button onclick="buscarPorDocumento()" class="btn btn-sm btn-gold">Buscar</button>
+          </div>
+          <button onclick="listarUsuarios()" class="btn btn-sm btn-outline-dark ms-auto">Listar Todos</button>
+        </div>
+      </div>
+
+      <!-- FORMULARIO CREAR / EDITAR -->
+      <div class="col-md-5">
+        <div class="bg-white p-4 border rounded shadow-sm">
+          <h5 class="fw-bold mb-3" id="tituloFormulario">Registrar Usuario</h5>
+          <form id="formUsuario" onsubmit="guardarUsuario(event)">
+            <input type="hidden" id="idUsuario" />
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Documento</label>
+              <input type="text" id="documento" class="form-control form-control-sm" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Nombre Completo</label>
+              <input type="text" id="nombreCompleto" class="form-control form-control-sm" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Email</label>
+              <input type="email" id="email" class="form-control form-control-sm" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Teléfono</label>
+              <input type="text" id="telefono" class="form-control form-control-sm" />
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Contraseña</label>
+              <input type="password" id="password" class="form-control form-control-sm" placeholder="Opcional al editar" />
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label small fw-bold">Rol</label>
+                <select id="rol" class="form-select form-select-sm">
+                  <option value="Cliente">Cliente</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-bold">Estado</label>
+                <select id="estado" class="form-select form-select-sm">
+                  <option value="Activo">Activo</option>
+                  <option value="Inactivo">Inactivo</option>
+                </select>
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-gold btn-sm w-100 fw-bold">Guardar Usuario</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="limpiarFormulario()">Limpiar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- TABLA DE USUARIOS -->
+      <div class="col-md-7">
+        <div class="bg-white p-4 border rounded shadow-sm">
+          <h5 class="fw-bold mb-3">Usuarios Registrados</h5>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle small">
+              <thead class="table-dark">
+                <tr><th>ID</th><th>Documento</th><th>Nombre</th><th>Rol</th><th>Estado</th><th class="text-center">Acciones</th></tr>
+              </thead>
+              <tbody id="tablaUsuarios"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_USUARIOS = 'http://192.168.100.3:3001/api/usuarios';
+    const token = localStorage.getItem('token');
+    const usuarioSesion = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+    if (!token || !usuarioSesion.documento) { window.location.href = 'login.html'; }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const esAdmin = usuarioSesion.rol && ['admin', 'administrador'].includes(usuarioSesion.rol.toLowerCase());
+      if (!esAdmin) { window.location.href = 'index.html'; return; }
+
+      const primerNombre = (usuarioSesion.nombre || usuarioSesion.nombreCompleto || 'Usuario').split(' ')[0];
+      document.getElementById('zona-usuario').innerHTML = `
+        <div class="dropdown">
+          <button class="btn btn-gold btn-sm dropdown-toggle fw-bold px-3 py-1" type="button" data-bs-toggle="dropdown">
+            ${primerNombre} <span class="badge bg-danger ms-1">Admin</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow">
+            <li><a class="dropdown-item fw-bold" href="configuracion.html">Configuración</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><button class="dropdown-item text-danger fw-bold" onclick="cerrarSesion()">Cerrar Sesión</button></li>
+          </ul>
+        </div>`;
+
+      listarUsuarios();
+    });
+
+    async function listarUsuarios() {
+      try {
+        const res = await axios.get(API_USUARIOS, { headers: { Authorization: `Bearer ${token}` } });
+        const lista = res.data.usuarios || res.data;
+        mostrarTabla(lista);
+      } catch (err) { console.error(err); }
+    }
+
+    function mostrarTabla(lista) {
+      const tbody = document.getElementById('tablaUsuarios');
+      tbody.innerHTML = '';
+      if (!Array.isArray(lista)) lista = [lista];
+      lista.forEach(u => {
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>#${u.idUsuario}</strong></td>
+            <td>${u.documento}</td>
+            <td>${u.nombreCompleto}</td>
+            <td><span class="badge ${u.rol === 'Admin' ? 'bg-danger' : 'bg-primary'}">${u.rol}</span></td>
+            <td><span class="badge ${u.estado === 'Activo' ? 'bg-success' : 'bg-secondary'}">${u.estado}</span></td>
+            <td class="text-center">
+              <button class="btn btn-sm btn-outline-dark" onclick="cargarEnFormulario(${u.idUsuario})">Editar</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    async function buscarPorId() {
+      const id = document.getElementById('buscarId').value;
+      if (!id) return alert('Ingrese un ID');
+      try {
+        const res = await axios.get(`${API_USUARIOS}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+        mostrarTabla([res.data]);
+      } catch (err) { alert('Usuario no encontrado'); }
+    }
+
+    async function buscarPorDocumento() {
+      const doc = document.getElementById('buscarDocumento').value;
+      if (!doc) return alert('Ingrese un Documento');
+      try {
+        const res = await axios.get(`${API_USUARIOS}/documento/${doc}`, { headers: { Authorization: `Bearer ${token}` } });
+        mostrarTabla([res.data]);
+      } catch (err) { alert('Usuario no encontrado'); }
+    }
+
+    async function cargarEnFormulario(id) {
+      try {
+        const res = await axios.get(`${API_USUARIOS}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+        const u = res.data;
+        document.getElementById('idUsuario').value = u.idUsuario;
+        document.getElementById('documento').value = u.documento;
+        document.getElementById('nombreCompleto').value = u.nombreCompleto;
+        document.getElementById('email').value = u.email;
+        document.getElementById('telefono').value = u.telefono || '';
+        document.getElementById('rol').value = u.rol;
+        document.getElementById('estado').value = u.estado;
+        document.getElementById('password').value = '';
+        document.getElementById('tituloFormulario').textContent = `Editar Usuario #${u.idUsuario}`;
+      } catch (err) { alert('Error al cargar datos del usuario'); }
+    }
+
+    async function guardarUsuario(e) {
+      e.preventDefault();
+      const idUsuario = document.getElementById('idUsuario').value;
+      const datos = {
+        documento: document.getElementById('documento').value,
+        nombreCompleto: document.getElementById('nombreCompleto').value,
+        email: document.getElementById('email').value,
+        telefono: document.getElementById('telefono').value,
+        password: document.getElementById('password').value,
+        rol: document.getElementById('rol').value,
+        estado: document.getElementById('estado').value
+      };
+
+      try {
+        if (idUsuario) {
+          await axios.put(`${API_USUARIOS}/${idUsuario}`, datos, { headers: { Authorization: `Bearer ${token}` } });
+          alert('Usuario actualizado correctamente');
+        } else {
+          await axios.post(API_USUARIOS, datos, { headers: { Authorization: `Bearer ${token}` } });
+          alert('Usuario creado correctamente');
+        }
+        limpiarFormulario();
+        listarUsuarios();
+      } catch (err) { alert(err.response?.data?.mensaje || 'Error al guardar usuario'); }
+    }
+
+    function limpiarFormulario() {
+      document.getElementById('formUsuario').reset();
+      document.getElementById('idUsuario').value = '';
+      document.getElementById('tituloFormulario').textContent = 'Registrar Usuario';
+    }
+
+    function cerrarSesion() { if (confirm('¿Deseas cerrar tu sesión?')) { localStorage.clear(); window.location.href = 'login.html'; } }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

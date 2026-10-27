@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nueva Reserva - Hotel Leyton</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Inter:wght@400;500;600;700&display=swap');
+    :root { --ink: #182530; --gold: #b68a35; --parchment: #f6f2e8; --paper: #ffffff; --slate: #32424b; --border: #e3dac5; }
+    body { background-color: var(--parchment); color: var(--slate); font-family: 'Inter', sans-serif; }
+    .navbar { background-color: var(--ink) !important; border-bottom: 3px solid var(--gold); }
+    .navbar-brand { font-family: 'Fraunces', serif; font-size: 1.5rem; }
+    .section-title { font-family: 'Fraunces', serif; font-weight: bold; color: var(--ink); }
+    .title-underline { width: 60px; height: 3px; background-color: var(--gold); margin-bottom: 25px; }
+    .btn-gold { background-color: var(--gold); color: #fff; font-weight: 600; border: none; }
+    .btn-gold:hover { background-color: #967027; color: #fff; }
+    .btn-admin-panel { background-color: transparent; color: var(--gold) !important; border: 1px solid var(--gold); font-weight: 700; }
+    .btn-admin-panel:hover { background-color: var(--gold); color: #fff !important; }
+    .card-reserva { background: #fff; border: 1px solid var(--border); border-radius: 12px; }
+    .resumen-box { background-color: var(--parchment); border: 1px solid var(--border); border-radius: 8px; }
+    .checkbox-custom { cursor: pointer; }
+    .serv-disabled { background-color: #f8f9fa; opacity: 0.7; }
+    .dropdown-menu .dropdown-item { color: #182530 !important; }
+    .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html"><span style="color:#fff;">Hotel</span> <span style="color:var(--gold); font-style: italic;">Leyton</span></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center gap-2" id="menu-navegacion"></ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-5" style="max-width: 850px;">
+    <h2 class="section-title h3 mb-1" id="titulo-pagina">Crear Nueva Reserva</h2>
+    <div class="title-underline"></div>
+
+    <div class="card-reserva p-4 shadow-sm">
+      <form id="reserva-form" onsubmit="event.preventDefault();">
+        <div class="row g-3 mb-4">
+          <div class="col-md-6" id="contenedor-usuario-campo">
+            <label for="idUsuario" class="form-label fw-bold small" id="label-usuario">Huésped en Sesión</label>
+            <div id="input-usuario-wrapper">
+              <input type="text" class="form-control bg-light" id="idUsuarioDisplay" readonly />
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label for="idHabitacion" class="form-label fw-bold small">Habitación</label>
+            <select class="form-select" id="idHabitacion" onchange="calcularTotalEstimado()" required></select>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label for="fechaEntrada" class="form-label fw-bold small">Fecha de entrada</label>
+            <input type="date" class="form-control" id="fechaEntrada" onchange="calcularTotalEstimado()" required />
+          </div>
+          <div class="col-md-6">
+            <label for="fechaSalida" class="form-label fw-bold small">Fecha de salida</label>
+            <input type="date" class="form-control" id="fechaSalida" onchange="calcularTotalEstimado()" required />
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-bold small d-block mb-2">Servicios Adicionales Opcionales</label>
+          <div class="row g-2" id="contenedor-servicios">
+            <div class="col-12 text-muted small">Cargando servicios disponibles...</div>
+          </div>
+        </div>
+
+        <div class="resumen-box p-3 mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="text-muted small">Noches de Estancia:</span>
+            <span class="fw-bold" id="lbl-noches">0 noches</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="text-muted small">Costo Habitación:</span>
+            <span class="fw-bold" id="lbl-costo-habitacion">$0</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted small">Servicios Adicionales:</span>
+            <span class="fw-bold" id="lbl-costo-servicios">$0</span>
+          </div>
+          <hr class="my-2" style="border-color: var(--border);">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-bold fs-6">Precio Total Estimado:</span>
+            <span class="fs-4 fw-bold text-success" id="lbl-precio-total">$0</span>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-gold px-4 py-2 fw-bold w-50" onclick="procesarReserva('pagar_ahora')">Confirmar y Pagar</button>
+          <button type="button" class="btn btn-outline-dark px-4 py-2 fw-bold w-50" onclick="procesarReserva('pagar_despues')">Reservar y Pagar Después</button>
+          <a href="ver_reservas.html" class="btn btn-outline-secondary px-3 py-2">Volver</a>
+        </div>
+      </form>
+
+      <div id="mensaje" class="alert mt-4 d-none"></div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    const usuarioSesion = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+    if (!token || !usuarioSesion.documento) { window.location.href = 'login.html'; }
+
+    const esAdmin = usuarioSesion.rol && ['admin', 'administrador'].includes(usuarioSesion.rol.toLowerCase());
+
+    let listaHabitaciones = [];
+    let listaServicios = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      renderizarNavegacion();
+      await configurarCampoUsuario();
+      cargarHabitacionesYServicios();
+    });
+
+    async function configurarCampoUsuario() {
+      const wrapper = document.getElementById('input-usuario-wrapper');
+      const labelUsr = document.getElementById('label-usuario');
+
+      if (esAdmin) {
+        labelUsr.textContent = 'Seleccionar Huésped (Admin)';
+        wrapper.innerHTML = `<select class="form-select fw-bold" id="idUsuarioSelect" required>
+          <option value="">Cargando lista de huéspedes...</option>
+        </select>`;
+
+        try {
+          const resUsers = await axios.get('http://192.168.100.3:3001/api/usuarios', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const listaUsuarios = Array.isArray(resUsers.data) ? resUsers.data : (resUsers.data.usuarios || []);
+          
+          const selectUsr = document.getElementById('idUsuarioSelect');
+          selectUsr.innerHTML = '<option value="">-- Seleccione un huésped --</option>';
+
+          listaUsuarios.forEach(u => {
+            const uid = u.idUsuario || u.id;
+            const nombre = u.nombre || u.nombreCompleto || 'Usuario';
+            const doc = u.documento ? ` - Doc: ${u.documento}` : '';
+            selectUsr.innerHTML += `<option value="${uid}">${nombre}${doc}</option>`;
+          });
+        } catch (err) {
+          console.error('Error al cargar usuarios:', err);
+          document.getElementById('idUsuarioSelect').innerHTML = '<option value="">Error al cargar usuarios</option>';
+        }
+      } else {
+        labelUsr.textContent = 'Huésped en Sesión';
+        wrapper.innerHTML = `<input type="text" class="form-control bg-light" id="idUsuarioInput" value="${usuarioSesion.nombre || usuarioSesion.nombreCompleto || 'Usuario'} (${usuarioSesion.documento})" readonly />`;
+      }
+    }
+
+    async function cargarHabitacionesYServicios() {
+      try {
+        const resHab = await axios.get('http://192.168.100.3:3002/api/habitaciones', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        listaHabitaciones = Array.isArray(resHab.data) ? resHab.data : (resHab.data.habitaciones || []);
+
+        const selectHab = document.getElementById('idHabitacion');
+        selectHab.innerHTML = '<option value="">-- Seleccione una habitación --</option>';
+
+        const params = new URLSearchParams(window.location.search);
+        const habPre = params.get('idHabitacion');
+        const entradaPre = params.get('entrada');
+        const salidaPre = params.get('salida');
+
+        if (entradaPre) document.getElementById('fechaEntrada').value = entradaPre;
+        if (salidaPre) document.getElementById('fechaSalida').value = salidaPre;
+
+        listaHabitaciones.forEach(h => {
+          const sel = (habPre && String(h.idHabitacion || h.id) === String(habPre)) ? 'selected' : '';
+          selectHab.innerHTML += `<option value="${h.idHabitacion || h.id}" data-precio="${h.precioNoche}" ${sel}>Habitación ${h.numeroHabitacion} (${h.tipo}) - $${Number(h.precioNoche).toLocaleString('es-CO')}/noche</option>`;
+        });
+
+        const resServ = await axios.get('http://192.168.100.3:3000/api/servicios');
+        listaServicios = Array.isArray(resServ.data) ? resServ.data : (resServ.data.servicios || []);
+
+        const contServ = document.getElementById('contenedor-servicios');
+        contServ.innerHTML = '';
+        if (listaServicios.length === 0) {
+          contServ.innerHTML = '<div class="col-12 text-muted small">No hay servicios adicionales configurados.</div>';
+        } else {
+          listaServicios.forEach(s => {
+            const esDisponible = s.estado && s.estado.toLowerCase() === 'disponible';
+            const disabledAttr = esDisponible ? '' : 'disabled';
+            const classDisabled = esDisponible ? '' : 'serv-disabled';
+            const badgeEstado = esDisponible
+              ? `<span class="text-success fw-bold">+$${Number(s.precio).toLocaleString('es-CO')}</span>`
+              : `<span class="badge bg-secondary">No disponible</span>`;
+
+            contServ.innerHTML += `
+              <div class="col-md-6">
+                <div class="border rounded p-2 d-flex align-items-center gap-2 ${classDisabled}">
+                  <input class="form-check-input checkbox-custom" type="checkbox" value="${s.precio}" id="serv_${s.idServicio || s.id}" onchange="calcularTotalEstimado()" ${disabledAttr}>
+                  <label class="form-check-label small w-100 ${!esDisponible ? 'text-muted' : ''}" for="serv_${s.idServicio || s.id}">
+                    <strong>${s.nombre}</strong>
+                    <div class="float-end">${badgeEstado}</div>
+                  </label>
+                </div>
+              </div>`;
+          });
+        }
+
+        calcularTotalEstimado();
+      } catch (err) {
+        console.error('Error al inicializar formulario:', err);
+      }
+    }
+
+    function calcularTotalEstimado() {
+      const entrada = document.getElementById('fechaEntrada').value;
+      const salida = document.getElementById('fechaSalida').value;
+      const selectHab = document.getElementById('idHabitacion');
+      const optionSel = selectHab.options[selectHab.selectedIndex];
+
+      let noches = 0;
+      if (entrada && salida) {
+        const d1 = new Date(entrada);
+        const d2 = new Date(salida);
+        const diff = d2 - d1;
+        if (diff > 0) {
+          noches = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        }
+      }
+
+      const precioNoche = optionSel ? Number(optionSel.getAttribute('data-precio') || 0) : 0;
+      const costoHabitacion = noches * precioNoche;
+
+      let costoServicios = 0;
+      document.querySelectorAll('#contenedor-servicios input[type="checkbox"]:checked:not([disabled])').forEach(chk => {
+        costoServicios += Number(chk.value || 0);
+      });
+
+      const total = costoHabitacion + costoServicios;
+
+      document.getElementById('lbl-noches').textContent = `${noches} noche(s)`;
+      document.getElementById('lbl-costo-habitacion').textContent = `$${costoHabitacion.toLocaleString('es-CO')}`;
+      document.getElementById('lbl-costo-servicios').textContent = `$${costoServicios.toLocaleString('es-CO')}`;
+      document.getElementById('lbl-precio-total').textContent = `$${total.toLocaleString('es-CO')}`;
+
+      return { noches, total };
+    }
+
+    async function procesarReserva(modo) {
+      // Determinar el idUsuario según el rol
+      let idUsuarioDestino;
+      if (esAdmin) {
+        const selectUsr = document.getElementById('idUsuarioSelect');
+        idUsuarioDestino = selectUsr ? selectUsr.value : '';
+        if (!idUsuarioDestino) {
+          mostrarMensaje('Debe seleccionar un huésped para crear la reserva.', 'danger');
+          return;
+        }
+      } else {
+        idUsuarioDestino = usuarioSesion.idUsuario;
+      }
+
+      const idHabitacion = document.getElementById('idHabitacion').value;
+      const fechaEntrada = document.getElementById('fechaEntrada').value;
+      const fechaSalida = document.getElementById('fechaSalida').value;
+
+      if (!idHabitacion) {
+        mostrarMensaje('Por favor seleccione una habitación.', 'danger');
+        return;
+      }
+
+      const { noches, total } = calcularTotalEstimado();
+
+      if (noches <= 0) {
+        mostrarMensaje('La fecha de salida debe ser posterior a la fecha de entrada.', 'danger');
+        return;
+      }
+
+      const serviciosSeleccionados = [];
+      document.querySelectorAll('#contenedor-servicios input[type="checkbox"]:checked:not([disabled])').forEach(chk => {
+        const idServicio = chk.id.replace('serv_', '');
+        serviciosSeleccionados.push({ idServicio, precioUnitario: chk.value });
+      });
+
+      try {
+        const res = await axios.post('http://192.168.100.3:3003/api/reservas', {
+          idUsuario: idUsuarioDestino,
+          idHabitacion,
+          fechaEntrada,
+          fechaSalida,
+          precioTotal: total,
+          servicios: serviciosSeleccionados
+        }, { headers: { Authorization: `Bearer ${token}` } });
+
+        const newIdReserva = res.data.idReserva || '';
+
+        if (modo === 'pagar_ahora') {
+          mostrarMensaje('Reserva creada con éxito. Redirigiendo a la pasarela de pago...', 'success');
+          setTimeout(() => {
+            window.location.href = `menu_pagos.html?idReserva=${newIdReserva}&monto=${total}`;
+          }, 1500);
+        } else {
+          mostrarMensaje('¡Reserva creada con éxito! Quedó pendiente de pago.', 'success');
+          setTimeout(() => {
+            window.location.href = esAdmin ? 'gestion-reservas.html' : 'ver_reservas.html';
+          }, 1800);
+        }
+
+      } catch (error) {
+        console.error('Error al crear reserva:', error);
+        const mensajeBackend = error.response?.data?.error || 'Error al registrar la reserva. Intenta de nuevo.';
+        mostrarMensaje(mensajeBackend, 'danger');
+      }
+    }
+
+    function mostrarMensaje(txt, tipo) {
+      const m = document.getElementById('mensaje');
+      m.className = `alert alert-${tipo} mt-4`;
+      m.textContent = txt;
+      m.classList.remove('d-none');
+    }
+
+    function renderizarNavegacion() {
+      const menu = document.getElementById('menu-navegacion');
+      if (esAdmin) {
+        menu.innerHTML = '<li class="nav-item dropdown">' +
+            '<a class="nav-link dropdown-toggle active fw-semibold" href="#" role="button" data-bs-toggle="dropdown">Vista Cliente</a>' +
+            '<ul class="dropdown-menu shadow">' +
+              '<li><a class="dropdown-item" href="index.html">Inicio</a></li>' +
+              '<li><a class="dropdown-item" href="ver_habitaciones.html">Catálogo</a></li>' +
+              '<li><a class="dropdown-item" href="ver_servicios.html">Servicios</a></li>' +
+              '<li><a class="dropdown-item" href="disponibilidad.html">Disponibilidad</a></li>' +
+              '<li><a class="dropdown-item" href="menu_pagos.html">Pagos</a></li>' +
+              '<li><a class="dropdown-item" href="ver_reservas.html">Mis Reservas</a></li>' +
+            '</ul>' +
+          '</li>' +
+          '<li class="nav-item dropdown">' +
+            '<button class="btn btn-sm btn-admin-panel dropdown-toggle px-3 py-1" type="button" data-bs-toggle="dropdown">Administración</button>' +
+            '<ul class="dropdown-menu shadow">' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="gestion-reservas.html">Gestión de Reservas</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="editar_habitacion.html">Gestión de Habitaciones</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="editar_servicios.html">Gestión de Servicios</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="editar_pagos.html">Gestión de Pagos</a></li>' +
+              '<li><hr class="dropdown-divider"></li>' +
+              '<li><a class="dropdown-item fw-bold text-primary" href="usuarios.html">Gestión de Usuarios</a></li>' +
+            '</ul>' +
+          '</li>' +
+          '<li class="nav-item ms-lg-2" id="zona-usuario"></li>';
+      } else {
+        menu.innerHTML = '<li class="nav-item"><a class="nav-link" href="index.html">Inicio</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="ver_habitaciones.html">Catálogo</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="ver_servicios.html">Servicios</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="disponibilidad.html">Disponibilidad</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="menu_pagos.html">Pagos</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="ver_reservas.html">Mis Reservas</a></li>' +
+          '<li class="nav-item ms-lg-2" id="zona-usuario"></li>';
+      }
+
+      const primerNombre = (usuarioSesion.nombre || usuarioSesion.nombreCompleto || 'Usuario').split(' ')[0];
+      document.getElementById('zona-usuario').innerHTML = '<div class="dropdown">' +
+          '<button class="btn btn-gold btn-sm dropdown-toggle fw-bold px-3 py-1" type="button" data-bs-toggle="dropdown">' + primerNombre + (esAdmin ? ' <span class="badge bg-danger ms-1">Admin</span>' : '') + '</button>' +
+          '<ul class="dropdown-menu dropdown-menu-end shadow">' +
+            '<li><a class="dropdown-item fw-bold" href="configuracion.html">Configuración</a></li>' +
+            '<li><hr class="dropdown-divider"></li>' +
+            '<li><button class="dropdown-item text-danger fw-bold" onclick="cerrarSesion()">Cerrar Sesión</button></li>' +
+          '</ul>' +
+        '</div>';
+    }
+
+    function cerrarSesion() {
+      if (confirm('¿Deseas cerrar tu sesión?')) {
+        localStorage.clear();
+        window.location.href = 'login.html';
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+version: '3.8'
+
+networks:
+  red-hotel:
+    driver: overlay
+    attachable: true
+
+services:
+  backend-usuarios:
+    image: juanriverad/hotel-backend-usuarios:latest
+    ports:
+      - "3001:3001"
+    environment:
+      - DB_HOST=db-mysql
+    networks:
+      - red-hotel
+
+  backend-habitaciones:
+    image: juanriverad/hotel-backend-habitaciones:latest
+    ports:
+      - "3002:3002"
+    environment:
+      - DB_HOST=db-mysql
+    networks:
+      - red-hotel
+
+  backend-servicios:
+    image: juanriverad/hotel-backend-servicios:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db-mysql
+    networks:
+      - red-hotel
+
+  backend-reservas:
+    image: juanriverad/hotel-backend-reservas:latest
+    ports:
+      - "3003:3003"
+    environment:
+      - DB_HOST=db-mysql
+      - URL_USUARIOS=http://backend-usuarios:3001
+      - URL_HABITACIONES=http://backend-habitaciones:3002/api/habitaciones
+      - URL_SERVICIOS=http://backend-servicios:3000/api/servicios
+    networks:
+      - red-hotel
+
+  backend-pagos:
+    image: juanriverad/hotel-backend-pagos:latest
+    ports:
+      - "3004:3004"
+    environment:
+      - DB_HOST=db-mysql
+      - URL_RESERVAS=http://backend-reservas:3003
+    networks:
+      - red-hotel
+
+  frontend-apache:
+    image: juanriverad/hotel-frontend:latest
+    ports:
+      - "80:80"
+    networks:
+      - red-hotel
+
+  haproxy:
+    image: juanriverad/hotel-haproxy:latest
+    ports:
+      - "5080:80"
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == servidorUbuntu2
+    networks:
+      - red-hotel
+
+  db-mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    volumes:
+      - datos_mysql:/var/lib/mysql
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == servidorUbuntu2
+    networks:
+      - red-hotel
+volumes:
+  datos_mysql:

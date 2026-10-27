@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis Reservas - Hotel Leyton</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+      --cream: #f6f2e8;
+      --white: #ffffff;
+      --navy: #182530;
+      --navy-soft: #32424b;
+      --gold: #b68a35;
+      --gold-dark: #967027;
+      --gold-light: #f4ead3;
+      --red: #e63946;
+      --green: #168653;
+      --green-light: #e7f6ee;
+      --yellow-light: #fff5d6;
+      --border: #e3dac5;
+      --muted: #737b83;
+      --shadow: 0 10px 30px rgba(31, 41, 51, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--cream);
+      color: var(--navy-soft);
+      font-family: "Inter", sans-serif;
+    }
+
+    .navbar { background-color: var(--navy) !important; border-bottom: 3px solid var(--gold); }
+    .navbar-brand { font-family: 'Fraunces', serif; font-size: 1.5rem; }
+    .btn-gold { background-color: var(--gold); color: #fff; font-weight: 600; border: none; }
+    .btn-gold:hover { background-color: var(--gold-dark); color: #fff; }
+    .btn-admin-panel { background-color: transparent; color: var(--gold) !important; border: 1px solid var(--gold); font-weight: 700; }
+    .btn-admin-panel:hover { background-color: var(--gold); color: #fff !important; }
+
+    .page {
+      width: min(1280px, calc(100% - 64px));
+      margin: 0 auto;
+      padding: 40px 0 60px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .heading {
+      position: relative;
+      padding-bottom: 12px;
+    }
+
+    .heading h1 {
+      margin: 0;
+      font-family: 'Fraunces', serif;
+      font-size: clamp(2rem, 3vw, 2.55rem);
+      line-height: 1;
+      letter-spacing: -0.8px;
+      color: var(--navy);
+    }
+
+    .heading p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .heading::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 74px;
+      height: 3px;
+      border-radius: 10px;
+      background: var(--gold);
+    }
+
+    .new-reservation {
+      border: 0;
+      background: var(--gold);
+      color: white;
+      font-weight: 700;
+      font-size: 0.98rem;
+      padding: 12px 20px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: 0.2s ease;
+      box-shadow: 0 5px 12px rgba(184, 137, 47, 0.18);
+      white-space: nowrap;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .new-reservation:hover {
+      background: var(--gold-dark);
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 16px rgba(184, 137, 47, 0.25);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    .summary-card {
+      background: var(--white);
+      border: 1px solid rgba(31, 41, 51, 0.06);
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin-bottom: 5px;
+    }
+
+    .summary-value {
+      font-size: 1.55rem;
+      font-weight: 750;
+      color: var(--navy);
+    }
+
+    .summary-icon {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--gold-light);
+      color: var(--gold-dark);
+      font-weight: 800;
+    }
+
+    .summary-card.pending .summary-icon {
+      background: var(--yellow-light);
+      color: #a46f00;
+    }
+
+    .summary-card.balance .summary-icon {
+      background: #fde8ea;
+      color: var(--red);
+    }
+
+    .reservations-card {
+      background: var(--white);
+      border: 1px solid rgba(31, 41, 51, 0.06);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-header-custom {
+      padding: 21px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-header-custom h2 {
+      margin: 0;
+      font-size: 1.08rem;
+      color: var(--navy);
+      font-family: 'Fraunces', serif;
+    }
+
+    .card-header-custom span {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      padding: 0 18px 18px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 900px;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    thead th {
+      background: var(--navy);
+      color: white;
+      padding: 15px 14px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    thead th:first-child { border-radius: 8px 0 0 8px; }
+    thead th:last-child { border-radius: 0 8px 8px 0; text-align: center; }
+
+    tbody td {
+      padding: 15px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.92rem;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    tbody tr { transition: background 0.18s ease; }
+    tbody tr:hover { background: #faf9f5; }
+    tbody tr:last-child td { border-bottom: 0; }
+
+    .id { font-weight: 800; color: var(--navy); }
+    .room { color: var(--navy-soft); font-weight: 600; }
+    .date { color: #424b53; }
+    .money { font-weight: 750; }
+    .balance { color: var(--red); font-weight: 800; }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 92px;
+      padding: 5px 11px;
+      border-radius: 7px;
+      font-size: 0.78rem;
+      font-weight: 750;
+    }
+
+    .status.confirmed { background: var(--green-light); color: var(--green); }
+    .status.abonada { background: #e2f0fb; color: #0275d8; }
+    .status.pending { background: var(--yellow-light); color: #8a6200; }
+    .status.cancelled { background: #fde8ea; color: var(--red); }
+
+    .pay-button, .paid-button, .cancel-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 140px;
+      border-radius: 7px;
+      padding: 8px 13px;
+      font-size: 0.8rem;
+      font-weight: 750;
+      text-decoration: none;
+      transition: 0.18s ease;
+    }
+
+    .pay-button {
+      border: 1px solid var(--gold);
+      background: var(--gold);
+      color: white;
+    }
+    .pay-button:hover { background: var(--gold-dark); color: white; }
+
+    .paid-button {
+      border: 1px solid var(--border);
+      background: #f8f9fa;
+      color: var(--navy);
+      cursor: default;
+    }
+
+    .cancel-button {
+      border: 1px solid #f5c6cb;
+      background: #f8d7da;
+      color: #721c24;
+      cursor: default;
+    }
+
+    @media (max-width: 850px) {
+      .page { width: min(100% - 28px, 1280px); padding-top: 24px; }
+      .topbar { align-items: stretch; flex-direction: column; }
+      .summary { grid-template-columns: 1fr; }
+    }
+    .dropdown-menu .dropdown-item { color: #182530 !important; }
+    .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html"><span style="color:#fff;">Hotel</span> <span style="color:var(--gold); font-style: italic;">Leyton</span></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center gap-2" id="menu-navegacion"></ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page">
+
+    <header class="topbar">
+      <div class="heading">
+        <h1>Mis Reservas</h1>
+        <p>Consulta y administra tus reservas de habitación y pagos pendientes.</p>
+      </div>
+
+      <a href="crear_reserva.html" class="new-reservation">
+        + Nueva Reserva
+      </a>
+    </header>
+
+    <section class="summary">
+      <div class="summary-card">
+        <div>
+          <div class="summary-label">Total de reservas</div>
+          <div class="summary-value" id="res-total">0</div>
+        </div>
+        <div class="summary-icon">R</div>
+      </div>
+
+      <div class="summary-card pending">
+        <div>
+          <div class="summary-label">Reservas pendientes</div>
+          <div class="summary-value" id="res-pendientes">0</div>
+        </div>
+        <div class="summary-icon">!</div>
+      </div>
+
+      <div class="summary-card balance">
+        <div>
+          <div class="summary-label">Saldo pendiente</div>
+          <div class="summary-value" id="res-saldo">$0</div>
+        </div>
+        <div class="summary-icon">$</div>
+      </div>
+    </section>
+
+    <section class="reservations-card">
+      <div class="card-header-custom">
+        <div>
+          <h2>Historial de reservas</h2>
+          <span>Gestiona tus reservas y pagos desde aquí.</span>
+        </div>
+        <span id="contador-registros">0 registros</span>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>ID Reserva</th>
+              <th>Habitación</th>
+              <th>Entrada</th>
+              <th>Salida</th>
+              <th>Costo Total</th>
+              <th>Saldo Pendiente</th>
+              <th>Estado</th>
+              <th style="text-align: center;">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-reservas">
+            <tr><td colspan="8" class="text-center text-muted py-4">Cargando reservas...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const token = localStorage.getItem('token');
+    const usuarioSesion = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+    if (!token || !usuarioSesion.documento) { window.location.href = 'login.html'; }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderizarNavegacion();
+      cargarReservasUsuario();
+    });
+
+    async function cargarReservasUsuario() {
+      const tbody = document.getElementById('tabla-reservas');
+      const idUsuario = usuarioSesion.idUsuario || usuarioSesion.documento;
+
+      try {
+        const res = await axios.get(`http://192.168.100.3:3003/api/reservas?idUsuario=${idUsuario}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const reservas = Array.isArray(res.data) ? res.data : (res.data.reservas || []);
+
+        let pagos = [];
+        try {
+          const resPagos = await axios.get('http://192.168.100.3:3004/api/pagos', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          pagos = Array.isArray(resPagos.data) ? resPagos.data : (resPagos.data.pagos || []);
+        } catch (e) { console.log('Sin historial de pagos acumulado'); }
+
+        tbody.innerHTML = '';
+
+        if (reservas.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No tienes reservas registradas actualmente.</td></tr>';
+          document.getElementById('res-total').textContent = '0';
+          document.getElementById('res-pendientes').textContent = '0';
+          document.getElementById('res-saldo').textContent = '$0';
+          document.getElementById('contador-registros').textContent = '0 registros';
+          return;
+        }
+
+        let totalReservas = reservas.length;
+        let reservasPendientesCount = 0;
+        let saldoTotalAcumulado = 0;
+
+        reservas.forEach(r => {
+          const costoTotal = Number(r.precioTotal || 0);
+
+          const abonos = pagos
+            .filter(p => String(p.idReserva) === String(r.idReserva))
+            .reduce((sum, p) => sum + Number(p.monto || 0), 0);
+
+          const saldoPendiente = Math.max(0, costoTotal - abonos);
+
+          if (saldoPendiente > 0 && r.estado !== 'Cancelada') {
+            reservasPendientesCount++;
+            saldoTotalAcumulado += saldoPendiente;
+          }
+
+          let estadoReserva = r.estado || 'Pendiente';
+
+          let btnAccion = '';
+          if (estadoReserva === 'Cancelada') {
+            btnAccion = `<span class="cancel-button">Expirada / Cancelada</span>`;
+          } else if (saldoPendiente > 0) {
+            btnAccion = `<a href="insertar_pago.html?idReserva=${r.idReserva}&monto=${saldoPendiente}" class="pay-button">Pagar ($${saldoPendiente.toLocaleString('es-CO')})</a>`;
+          } else {
+            btnAccion = `<span class="paid-button">Pagado Completo ✓</span>`;
+          }
+
+          let badgeClase = 'status pending';
+          if (estadoReserva === 'Confirmada') badgeClase = 'status confirmed';
+          else if (estadoReserva === 'Abonada') badgeClase = 'status abonada';
+          else if (estadoReserva === 'Cancelada') badgeClase = 'status cancelled';
+
+          tbody.innerHTML += `
+            <tr>
+              <td class="id">#${r.idReserva}</td>
+              <td class="room">Hab. ${r.idHabitacion}</td>
+              <td class="date">${String(r.fechaEntrada).split('T')[0]}</td>
+              <td class="date">${String(r.fechaSalida).split('T')[0]}</td>
+              <td class="money">$${costoTotal.toLocaleString('es-CO')}</td>
+              <td class="balance">$${saldoPendiente.toLocaleString('es-CO')}</td>
+              <td><span class="${badgeClase}">${estadoReserva}</span></td>
+              <td style="text-align: center;">${btnAccion}</td>
+            </tr>`;
+        });
+
+        document.getElementById('res-total').textContent = totalReservas;
+        document.getElementById('res-pendientes').textContent = reservasPendientesCount;
+        document.getElementById('res-saldo').textContent = `$${saldoTotalAcumulado.toLocaleString('es-CO')}`;
+        document.getElementById('contador-registros').textContent = `${totalReservas} registros`;
+
+      } catch (err) {
+        console.error('Error al cargar reservas:', err);
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Error al consultar el historial de reservas.</td></tr>';
+      }
+    }
+
+    function renderizarNavegacion() {
+      const esAdmin = usuarioSesion.rol && ['admin', 'administrador'].includes(usuarioSesion.rol.toLowerCase());
+      const menu = document.getElementById('menu-navegacion');
+      if (esAdmin) {
+        menu.innerHTML = '<li class="nav-item dropdown">' +
+            '<a class="nav-link dropdown-toggle active fw-semibold" href="#" role="button" data-bs-toggle="dropdown">Vista Cliente</a>' +
+            '<ul class="dropdown-menu shadow">' +
+              '<li><a class="dropdown-item" href="index.html">Inicio</a></li>' +
+              '<li><a class="dropdown-item" href="ver_habitaciones.html">Catálogo</a></li>' +
+              '<li><a class="dropdown-item" href="ver_servicios.html">Servicios</a></li>' +
+              '<li><a class="dropdown-item" href="disponibilidad.html">Disponibilidad</a></li>' +
+              '<li><a class="dropdown-item" href="menu_pagos.html">Pagos</a></li>' +
+              '<li><a class="dropdown-item active" href="ver_reservas.html">Mis Reservas</a></li>' +
+            '</ul>' +
+          '</li>' +
+          '<li class="nav-item dropdown">' +
+            '<button class="btn btn-sm btn-admin-panel dropdown-toggle px-3 py-1" type="button" data-bs-toggle="dropdown">Administración</button>' +
+            '<ul class="dropdown-menu shadow">' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="gestion-reservas.html">Gestión de Reservas</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="editar_habitacion.html">Gestión de Habitaciones</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="editar_servicios.html">Gestión de Servicios</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="editar_pagos.html">Gestión de Pagos</a></li>' +
+              '<li><hr class="dropdown-divider"></li>' +
+              '<li><a class="dropdown-item fw-bold text-primary" href="usuarios.html">Gestión de Usuarios</a></li>' +
+            '</ul>' +
+          '</li>' +
+          '<li class="nav-item ms-lg-2" id="zona-usuario"></li>';
+      } else {
+        menu.innerHTML = '<li class="nav-item"><a class="nav-link" href="index.html">Inicio</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="ver_habitaciones.html">Catálogo</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="ver_servicios.html">Servicios</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="disponibilidad.html">Disponibilidad</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="menu_pagos.html">Pagos</a></li>' +
+          '<li class="nav-item"><a class="nav-link active" href="ver_reservas.html">Mis Reservas</a></li>' +
+          '<li class="nav-item ms-lg-2" id="zona-usuario"></li>';
+      }
+
+      const primerNombre = (usuarioSesion.nombre || usuarioSesion.nombreCompleto || 'Usuario').split(' ')[0];
+      document.getElementById('zona-usuario').innerHTML = '<div class="dropdown">' +
+          '<button class="btn btn-gold btn-sm dropdown-toggle fw-bold px-3 py-1" type="button" data-bs-toggle="dropdown">' + primerNombre + (esAdmin ? ' <span class="badge bg-danger ms-1">Admin</span>' : '') + '</button>' +
+          '<ul class="dropdown-menu dropdown-menu-end shadow">' +
+            '<li><a class="dropdown-item fw-bold" href="configuracion.html">Configuración</a></li>' +
+            '<li><hr class="dropdown-divider"></li>' +
+            '<li><button class="dropdown-item text-danger fw-bold" onclick="cerrarSesion()">Cerrar Sesión</button></li>' +
+          '</ul>' +
+        '</div>';
+    }
+
+    function cerrarSesion() {
+      if (confirm('¿Deseas cerrar tu sesión?')) {
+        localStorage.clear();
+        window.location.href = 'login.html';
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

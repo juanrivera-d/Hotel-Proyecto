@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis Comprobantes de Pago - Hotel Leyton</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+      --ink: #182530;
+      --gold: #b68a35;
+      --gold-dark: #967027;
+      --gold-light: #f4ead3;
+      --parchment: #f6f2e8;
+      --paper: #ffffff;
+      --slate: #32424b;
+      --border: #e3dac5;
+      --navy: #1d2933;
+      --navy-soft: #344451;
+      --gold-pale: #f7efdd;
+      --green: #168653;
+      --green-light: #e7f6ee;
+      --green-pale: #e9f7ef;
+      --gray: #6d747b;
+      --line: #e8e5de;
+      --shadow: 0 10px 30px rgba(31, 41, 51, 0.08);
+    }
+
+    body { background-color: var(--parchment); color: var(--slate); font-family: "Inter", sans-serif; }
+
+    /* NAVBAR HOTEL LEYTON */
+    .navbar { background-color: var(--ink) !important; border-bottom: 3px solid var(--gold); }
+    .navbar-brand { font-family: 'Fraunces', serif; font-size: 1.5rem; }
+    .btn-gold { background-color: var(--gold); color: #fff; font-weight: 600; border: none; }
+    .btn-gold:hover { background-color: var(--gold-dark); color: #fff; }
+    .btn-admin-panel { background-color: transparent; color: var(--gold) !important; border: 1px solid var(--gold); font-weight: 700; }
+    .btn-admin-panel:hover { background-color: var(--gold); color: #fff !important; }
+
+    /* CONTENEDOR PRINCIPAL */
+    .page {
+      width: min(1280px, calc(100% - 64px));
+      margin: 0 auto;
+      padding: 40px 0 60px;
+    }
+
+    .heading {
+      position: relative;
+      padding-bottom: 12px;
+      margin-bottom: 28px;
+    }
+
+    .heading h1 {
+      margin: 0;
+      font-family: 'Fraunces', serif;
+      font-size: clamp(2rem, 3vw, 2.55rem);
+      line-height: 1;
+      color: var(--navy);
+    }
+
+    .heading p {
+      margin: 10px 0 0;
+      color: var(--gray);
+      font-size: 0.94rem;
+    }
+
+    .heading::after {
+      content: "";
+      position: absolute;
+      left: 0; bottom: 0;
+      width: 74px; height: 3px;
+      border-radius: 10px;
+      background: var(--gold);
+    }
+
+    /* ESTILO NUEVO Y ESTÉTICO PARA EL BOTÓN VER DETALLE */
+    .btn-detalle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 16px;
+      font-size: 0.82rem;
+      font-weight: 650;
+      color: var(--gold-dark);
+      background: var(--gold-light);
+      border: 1px solid rgba(182, 138, 53, 0.35);
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 5px rgba(182, 138, 53, 0.1);
+    }
+
+    .btn-detalle:hover {
+      background: var(--gold);
+      color: white;
+      border-color: var(--gold);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(182, 138, 53, 0.25);
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 92px;
+      padding: 5px 11px;
+      border-radius: 7px;
+      font-size: 0.78rem;
+      font-weight: 750;
+    }
+    .status.confirmed { background: var(--green-light); color: var(--green); }
+
+    /* COMPROBANTE / MODAL ESTILO */
+    .receipt {
+      width: 100%;
+      background: var(--paper);
+      border-radius: 18px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .receipt-top {
+      background: var(--navy);
+      color: white;
+      padding: 25px 30px 27px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .receipt-top::after {
+      content: ""; position: absolute;
+      width: 180px; height: 180px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 50%; right: -65px; top: -95px;
+    }
+
+    .top-row {
+      position: relative; z-index: 2;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .document-label {
+      font-size: 0.76rem; letter-spacing: 2px;
+      text-transform: uppercase; color: #c9ced2; margin-bottom: 5px;
+    }
+
+    .document-title {
+      margin: 0; font-family: Georgia, serif;
+      font-size: 1.65rem; font-weight: 700; color: white;
+    }
+
+    .receipt-number { text-align: right; }
+    .receipt-number span { display: block; color: #aeb7be; font-size: 0.72rem; margin-bottom: 3px; }
+    .receipt-number strong { font-size: 1.2rem; color: white; }
+
+    .gold-line { height: 4px; background: var(--gold); }
+
+    .receipt-body { padding: 30px; }
+
+    .hotel-brand {
+      text-align: center; padding-bottom: 24px;
+      border-bottom: 1px dashed var(--line); position: relative;
+    }
+
+    .hotel-symbol {
+      width: 50px; height: 50px; margin: 0 auto 12px;
+      border: 1px solid rgba(184, 137, 47, 0.55);
+      border-radius: 50%; display: grid; place-items: center;
+      color: var(--gold); font-family: Georgia, serif; font-size: 1.25rem;
+    }
+
+    .hotel-name {
+      margin: 0; font-family: Georgia, serif;
+      font-size: 1.85rem; letter-spacing: 1px; color: var(--navy);
+    }
+
+    .hotel-subtitle { margin: 5px 0 0; color: var(--gray); font-size: 0.88rem; }
+
+    .success-box {
+      margin: 23px 0; padding: 16px 18px;
+      border: 1px solid #ccebd9; background: var(--green-pale);
+      border-radius: 11px; display: flex; align-items: center; gap: 13px;
+    }
+
+    .success-icon {
+      width: 38px; height: 38px; flex: 0 0 38px;
+      border-radius: 50%; background: var(--green); color: white;
+      display: grid; place-items: center; font-weight: 800; font-size: 1.05rem;
+    }
+
+    .success-text strong { display: block; color: var(--green); font-size: 0.96rem; margin-bottom: 2px; }
+    .success-text span { color: #587063; font-size: 0.78rem; }
+
+    .section-title-custom {
+      display: flex; align-items: center; gap: 10px;
+      color: var(--navy); font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 1.4px; text-transform: uppercase; margin: 25px 0 12px;
+    }
+    .section-title-custom::before { content: ""; width: 25px; height: 2px; background: var(--gold); }
+
+    .details { border: 1px solid var(--line); border-radius: 11px; overflow: hidden; }
+
+    .detail-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      padding: 13px 16px; gap: 20px; border-bottom: 1px solid var(--line);
+    }
+    .detail-row:last-child { border-bottom: 0; }
+    .detail-label { color: var(--gray); font-size: 0.84rem; }
+    .detail-value { text-align: right; color: var(--navy-soft); font-weight: 700; font-size: 0.88rem; }
+
+    .total-box {
+      margin-top: 24px; padding: 20px 21px;
+      background: var(--gold-pale); border: 1px solid #ead9b3;
+      border-radius: 12px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .total-label { color: var(--navy-soft); font-weight: 750; font-size: 0.91rem; }
+    .total-description { display: block; margin-top: 4px; color: var(--gray); font-size: 0.72rem; }
+    .total-amount { color: var(--green); font-size: 1.9rem; font-weight: 800; white-space: nowrap; }
+
+    /* TABLA PRINCIPAL HISTORIAL */
+    .table-card {
+      background: var(--paper);
+      border: 1px solid rgba(31, 41, 51, 0.06);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .table-wrapper { overflow-x: auto; padding: 18px; }
+    table { width: 100%; min-width: 900px; border-collapse: separate; border-spacing: 0; }
+    thead th { background: var(--navy); color: white; padding: 15px 14px; font-size: 0.84rem; font-weight: 700; text-align: left; }
+    thead th:first-child { border-radius: 8px 0 0 8px; }
+    thead th:last-child { border-radius: 0 8px 8px 0; text-align: center; }
+    tbody td { padding: 15px 14px; border-bottom: 1px solid var(--line); font-size: 0.92rem; vertical-align: middle; }
+    tbody tr:hover { background: #faf9f5; }
+
+    @media print {
+      body * { visibility: hidden; }
+      #modalComprobante, #modalComprobante * { visibility: visible; }
+      #modalComprobante { position: absolute; left: 0; top: 0; width: 100%; }
+      .modal-footer, .btn-close { display: none !important; }
+    }
+    .dropdown-menu .dropdown-item { color: #182530 !important; }
+    .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR HOTEL LEYTON -->
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html"><span style="color:#fff;">Hotel</span> <span style="color:var(--gold); font-style: italic;">Leyton</span></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center gap-2" id="menu-navegacion"></ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page">
+    <div class="heading">
+      <h1>Comprobantes de Pago</h1>
+      <p>Historial y detalles de transacciones de tus reservas.</p>
+    </div>
+
+    <div class="table-card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th class="text-center">ID Pago</th>
+              <th class="text-center">ID Reserva</th>
+              <th class="text-end">Monto Abonado</th>
+              <th class="text-center">Método</th>
+              <th class="text-center">Estado</th>
+              <th class="text-center">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-pagos">
+            <tr><td colspan="6" class="text-center text-muted py-4">Cargando comprobantes...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL / POP-UP CON ESTILO DE RECIBO OFICIAL -->
+  <div class="modal fade" id="modalComprobante" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 bg-transparent shadow-none">
+
+        <div class="modal-body p-0">
+          <div class="receipt" id="comprobante-imprimir">
+
+            <!-- CABECERA -->
+            <header class="receipt-top">
+              <div class="top-row">
+                <div>
+                  <div class="document-label">Documento oficial</div>
+                  <h1 class="document-title">Comprobante de Pago</h1>
+                </div>
+                <div class="receipt-number">
+                  <span>COMPROBANTE</span>
+                  <strong id="rec-id-top">#00</strong>
+                </div>
+              </div>
+            </header>
+
+            <div class="gold-line"></div>
+
+            <!-- CUERPO -->
+            <section class="receipt-body">
+              <div class="hotel-brand">
+                <div class="hotel-symbol">HL</div>
+                <h2 class="hotel-name">HOTEL LEYTON</h2>
+                <p class="hotel-subtitle">Comprobante Oficial de Transacción</p>
+              </div>
+
+              <div class="success-box">
+                <div class="success-icon">✓</div>
+                <div class="success-text">
+                  <strong>Pago realizado exitosamente</strong>
+                  <span>La transacción fue procesada y registrada correctamente.</span>
+                </div>
+              </div>
+
+              <div class="section-title-custom">Información de la transacción</div>
+
+              <div class="details" id="modal-contenido-detalle">
+                <!-- Se llena dinámicamente -->
+              </div>
+
+              <div class="total-box">
+                <div>
+                  <div class="total-label">Monto total cancelado</div>
+                  <span class="total-description">Valor registrado en esta transacción</span>
+                </div>
+                <div class="total-amount" id="rec-monto-total">$0</div>
+              </div>
+            </section>
+
+            <!-- PIE -->
+            <footer class="receipt-footer d-flex justify-content-between align-items-center p-4 bg-light border-top">
+              <div class="footer-note small text-muted">
+                <strong>Hotel Leyton</strong><br>Gracias por confiar en nosotros.
+              </div>
+              <div class="buttons d-flex gap-2">
+                <button type="button" class="btn btn-secondary btn-sm fw-bold px-3" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-gold btn-sm fw-bold px-3" onclick="window.print()">🖨️ Imprimir / PDF</button>
+              </div>
+            </footer>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    const usuarioSesion = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+    if (!token || !usuarioSesion.documento) { window.location.href = 'login.html'; }
+
+    let modalBs = null;
+    const esAdmin = usuarioSesion.rol && ['admin', 'administrador'].includes(usuarioSesion.rol.toLowerCase());
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderizarNavegacion();
+      modalBs = new bootstrap.Modal(document.getElementById('modalComprobante'));
+      cargarPagosUsuario();
+    });
+
+    async function cargarPagosUsuario() {
+      const tbody = document.getElementById('tabla-pagos');
+      const idUsuario = usuarioSesion.idUsuario;
+
+      try {
+        // Enviar ?idUsuario=... solo si no es administrador (o si es cliente normal para filtrar sus pagos)
+        const urlPagos = esAdmin 
+          ? 'http://192.168.100.3:3004/api/pagos' 
+          : `http://192.168.100.3:3004/api/pagos?idUsuario=${idUsuario}`;
+
+        const res = await axios.get(urlPagos, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const pagos = Array.isArray(res.data) ? res.data : (res.data.pagos || []);
+        tbody.innerHTML = '';
+
+        if (pagos.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No se registran comprobantes de pago asociados.</td></tr>';
+          return;
+        }
+
+        pagos.forEach(p => {
+          tbody.innerHTML += `
+            <tr>
+              <td class="text-center fw-bold" style="color: var(--navy);">#${p.idPago}</td>
+              <td class="text-center text-muted">Reserva #${p.idReserva}</td>
+              <td class="text-end text-success fw-bold">$${Number(p.monto).toLocaleString('es-CO')}</td>
+              <td class="text-center">${p.metodoPago}</td>
+              <td class="text-center"><span class="status confirmed">${p.estado || 'Exitoso'}</span></td>
+              <td class="text-center">
+                <button class="btn-detalle" onclick="verDetalleModal(${p.idPago})">
+                  <span>📄</span> Ver Detalle
+                </button>
+              </td>
+            </tr>`;
+        });
+      } catch (err) {
+        console.error('Error al cargar comprobantes:', err);
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Error al consultar el historial de pagos.</td></tr>';
+      }
+    }
+
+    async function verDetalleModal(idPago) {
+      const cont = document.getElementById('modal-contenido-detalle');
+      document.getElementById('rec-id-top').textContent = `#${idPago}`;
+      document.getElementById('rec-monto-total').textContent = '$0';
+      cont.innerHTML = '<div class="p-3 text-center text-muted">Cargando comprobante...</div>';
+      modalBs.show();
+
+      try {
+        const res = await axios.get(`http://192.168.100.3:3004/api/pagos/${idPago}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const p = res.data;
+        const montoFmt = `$${Number(p.monto).toLocaleString('es-CO')}`;
+
+        document.getElementById('rec-monto-total').textContent = montoFmt;
+
+        cont.innerHTML = `
+          <div class="detail-row">
+            <span class="detail-label">Número de comprobante</span>
+            <span class="detail-value">#${p.idPago}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Reserva asociada</span>
+            <span class="detail-value">#${p.idReserva}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Titular de la cuenta</span>
+            <span class="detail-value">${usuarioSesion.nombre || usuarioSesion.nombreCompleto || 'Usuario'} (${usuarioSesion.documento})</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Método de pago</span>
+            <span class="detail-value">${p.metodoPago}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Estado de transacción</span>
+            <span class="detail-value" style="color: var(--green);">${p.estado || 'Exitoso'}</span>
+          </div>`;
+      } catch (e) {
+        cont.innerHTML = '<div class="p-3 text-danger text-center">No se pudo cargar el detalle del comprobante.</div>';
+      }
+    }
+
+    function renderizarNavegacion() {
+      const menu = document.getElementById('menu-navegacion');
+      if (esAdmin) {
+        menu.innerHTML = '<li class="nav-item dropdown">' +
+            '<a class="nav-link dropdown-toggle active fw-semibold" href="#" role="button" data-bs-toggle="dropdown">Vista Cliente</a>' +
+            '<ul class="dropdown-menu shadow">' +
+              '<li><a class="dropdown-item" href="index.html">Inicio</a></li>' +
+              '<li><a class="dropdown-item" href="ver_habitaciones.html">Catálogo</a></li>' +
+              '<li><a class="dropdown-item" href="ver_servicios.html">Servicios</a></li>' +
+              '<li><a class="dropdown-item" href="disponibilidad.html">Disponibilidad</a></li>' +
+              '<li><a class="dropdown-item" href="menu_pagos.html">Pagos</a></li>' +
+              '<li><a class="dropdown-item" href="ver_reservas.html">Mis Reservas</a></li>' +
+            '</ul>' +
+          '</li>' +
+          '<li class="nav-item dropdown">' +
+            '<button class="btn btn-sm btn-admin-panel dropdown-toggle px-3 py-1" type="button" data-bs-toggle="dropdown">Administración</button>' +
+            '<ul class="dropdown-menu shadow">' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="gestion-reservas.html">Gestión de Reservas</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="editar_habitacion.html">Gestión de Habitaciones</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="editar_servicios.html">Gestión de Servicios</a></li>' +
+              '<li><a class="dropdown-item fw-bold text-dark" href="editar_pagos.html">Gestión de Pagos</a></li>' +
+              '<li><hr class="dropdown-divider"></li>' +
+              '<li><a class="dropdown-item fw-bold text-primary" href="usuarios.html">Gestión de Usuarios</a></li>' +
+            '</ul>' +
+          '</li>' +
+          '<li class="nav-item ms-lg-2" id="zona-usuario"></li>';
+      } else {
+        menu.innerHTML = '<li class="nav-item"><a class="nav-link" href="index.html">Inicio</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="ver_habitaciones.html">Catálogo</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="ver_servicios.html">Servicios</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="disponibilidad.html">Disponibilidad</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="menu_pagos.html">Pagos</a></li>' +
+          '<li class="nav-item"><a class="nav-link" href="ver_reservas.html">Mis Reservas</a></li>' +
+          '<li class="nav-item ms-lg-2" id="zona-usuario"></li>';
+      }
+
+      const primerNombre = (usuarioSesion.nombre || usuarioSesion.nombreCompleto || 'Usuario').split(' ')[0];
+      document.getElementById('zona-usuario').innerHTML = '<div class="dropdown">' +
+          '<button class="btn btn-gold btn-sm dropdown-toggle fw-bold px-3 py-1" type="button" data-bs-toggle="dropdown">' + primerNombre + (esAdmin ? ' <span class="badge bg-danger ms-1">Admin</span>' : '') + '</button>' +
+          '<ul class="dropdown-menu dropdown-menu-end shadow">' +
+            '<li><a class="dropdown-item fw-bold" href="configuracion.html">Configuración</a></li>' +
+            '<li><hr class="dropdown-divider"></li>' +
+            '<li><button class="dropdown-item text-danger fw-bold" onclick="cerrarSesion()">Cerrar Sesión</button></li>' +
+          '</ul>' +
+        '</div>';
+    }
+
+    function cerrarSesion() {
+      if (confirm('¿Deseas cerrar tu sesión?')) {
+        localStorage.clear();
+        window.location.href = 'login.html';
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

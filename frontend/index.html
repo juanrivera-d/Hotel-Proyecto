@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hotel Leyton - Inicio</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Inter:wght@400;500;600;700&display=swap');
+    :root { --ink: #182530; --gold: #b68a35; --parchment: #f6f2e8; --paper: #ffffff; --slate: #32424b; --border: #e3dac5; }
+    body { background: var(--parchment); color: var(--slate); font-family: 'Inter', sans-serif; }
+    .navbar { background-color: var(--ink) !important; border-bottom: 3px solid var(--gold); }
+    .navbar-brand { font-family: 'Fraunces', serif; font-size: 1.5rem; }
+    .hero-section { background: linear-gradient(rgba(24, 37, 48, 0.85), rgba(24, 37, 48, 0.85)), url('https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat; color: #fff; padding: 80px 20px; border-radius: 8px; }
+    .hero-title { font-family: 'Fraunces', serif; font-size: 2.8rem; }
+    .hero-title span { color: var(--gold); font-style: italic; }
+    .card { background-color: var(--paper); border: 1px solid var(--border); }
+    .btn-gold { background-color: var(--gold); color: #fff; font-weight: 600; border: none; }
+    .btn-gold:hover { background-color: #967027; color: #fff; }
+    .btn-admin-panel { background-color: transparent; color: var(--gold) !important; border: 1px solid var(--gold); font-weight: 700; }
+    .btn-admin-panel:hover { background-color: var(--gold); color: #fff !important; }
+    .dropdown-menu .dropdown-item { color: #182530 !important; } 
+    .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html"><span style="color:#fff;">Hotel</span> <span style="color:var(--gold); font-style: italic;">Leyton</span></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center gap-2" id="menu-navegacion"></ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-4">
+    <div class="hero-section text-center">
+      <h1 class="hero-title mb-3">Bienvenido a <span>Hotel Leyton</span></h1>
+      <p class="fs-5 max-w-700 mx-auto mb-4 text-light">Exclusividad, confort y servicio de alta calidad. Gestione sus reservas en línea.</p>
+      <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a href="disponibilidad.html" class="btn btn-gold btn-lg px-4 fw-bold">Consultar Disponibilidad</a>
+        <a href="ver_habitaciones.html" class="btn btn-outline-light btn-lg px-4">Ver Catálogo de Habitaciones</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mb-5">
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+      <div class="col">
+        <div class="card h-100 text-center p-4 shadow-sm">
+          <div class="card-body"><h5 class="card-title fw-bold mb-3">Disponibilidad</h5><p class="card-text text-muted small mb-4">Busque habitaciones libres introduciendo la fecha de entrada y salida.</p></div>
+          <div class="card-footer bg-transparent border-0 pt-0"><a href="disponibilidad.html" class="btn btn-outline-dark w-100 fw-semibold">Buscar Fechas</a></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card h-100 text-center p-4 shadow-sm">
+          <div class="card-body"><h5 class="card-title fw-bold mb-3">Nueva Reserva</h5><p class="card-text text-muted small mb-4">Seleccione la habitación de su preferencia e incluya servicios adicionales.</p></div>
+          <div class="card-footer bg-transparent border-0 pt-0"><a href="crear_reserva.html" class="btn btn-gold w-100 fw-bold">Reservar Ahora</a></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card h-100 text-center p-4 shadow-sm">
+          <div class="card-body"><h5 class="card-title fw-bold mb-3">Mis Reservas</h5><p class="card-text text-muted small mb-4">Consulte sus reservas registradas, verifique estados o realice cancelaciones.</p></div>
+          <div class="card-footer bg-transparent border-0 pt-0"><a href="ver_reservas.html" class="btn btn-outline-dark w-100 fw-semibold">Consultar Reservas</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-dark text-white py-4 mt-auto border-top border-warning text-center"><small class="text-secondary">Hotel Leyton &copy; 2026</small></footer>
+
+  <script>
+    const token = localStorage.getItem('token');
+    const usuarioSesion = JSON.parse(localStorage.getItem('usuario'));
+    if (!token || !usuarioSesion) { window.location.href = 'login.html'; }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderizarNavegacion('index.html');
+    });
+
+    function renderizarNavegacion(paginaActual) {
+      const esAdmin = usuarioSesion.rol && ['admin', 'administrador'].includes(usuarioSesion.rol.toLowerCase());
+      const menu = document.getElementById('menu-navegacion');
+
+      if (esAdmin) {
+        menu.innerHTML = `
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle active fw-semibold" href="#" id="dropCliente" role="button" data-bs-toggle="dropdown">Vista Cliente</a>
+            <ul class="dropdown-menu shadow">
+              <li><a class="dropdown-item active" href="index.html">Inicio</a></li>
+              <li><a class="dropdown-item" href="ver_habitaciones.html">Catálogo</a></li>
+              <li><a class="dropdown-item" href="ver_servicios.html">Servicios</a></li>
+              <li><a class="dropdown-item" href="disponibilidad.html">Disponibilidad</a></li>
+              <li><a class="dropdown-item" href="menu_pagos.html">Pagos</a></li>
+              <li><a class="dropdown-item" href="ver_reservas.html">Mis Reservas</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <button class="btn btn-sm btn-admin-panel dropdown-toggle px-3 py-1" type="button" data-bs-toggle="dropdown">
+              Administración ⚙️
+            </button>
+            <ul class="dropdown-menu shadow">
+              <li><a class="dropdown-item fw-bold text-dark" href="gestion-reservas.html">Gestión de Reservas</a></li>
+              <li><a class="dropdown-item fw-bold text-dark" href="editar_habitacion.html">Gestión de Habitaciones</a></li>
+              <li><a class="dropdown-item fw-bold text-dark" href="editar_servicios.html">Gestión de Servicios</a></li>
+              <li><a class="dropdown-item fw-bold text-dark" href="editar_pagos.html">Gestión de Pagos</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item fw-bold text-primary" href="usuarios.html">Gestión de Usuarios</a></li>
+            </ul>
+          </li>
+          <li class="nav-item ms-lg-2" id="zona-usuario"></li>`;
+      } else {
+        menu.innerHTML = `
+          <li class="nav-item"><a class="nav-link active" href="index.html">Inicio</a></li>
+          <li class="nav-item"><a class="nav-link" href="ver_habitaciones.html">Catálogo</a></li>
+          <li class="nav-item"><a class="nav-link" href="ver_servicios.html">Servicios</a></li>
+          <li class="nav-item"><a class="nav-link" href="disponibilidad.html">Disponibilidad</a></li>
+          <li class="nav-item"><a class="nav-link" href="menu_pagos.html">Pagos</a></li>
+          <li class="nav-item"><a class="nav-link" href="ver_reservas.html">Mis Reservas</a></li>
+          <li class="nav-item ms-lg-2" id="zona-usuario"></li>`;
+      }
+
+      const nombreCorto = (usuarioSesion.nombre || usuarioSesion.nombreCompleto || 'Usuario').split(' ')[0];
+      document.getElementById('zona-usuario').innerHTML = `
+        <div class="dropdown">
+          <button class="btn btn-gold btn-sm dropdown-toggle fw-bold px-3 py-1" type="button" data-bs-toggle="dropdown">
+            ${nombreCorto} ${esAdmin ? '<span class="badge bg-danger ms-1">Admin</span>' : ''}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow">
+            <li><a class="dropdown-item fw-bold" href="configuracion.html">Configuración</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><button class="dropdown-item text-danger fw-bold" onclick="cerrarSesion()">Cerrar Sesión</button></li>
+          </ul>
+        </div>`;
+    }
+
+    function cerrarSesion() { if (confirm('¿Deseas cerrar tu sesión?')) { localStorage.clear(); window.location.href = 'login.html'; } }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  
+
+<script src="js/nav.js"></script>
+</body>
+</html>
