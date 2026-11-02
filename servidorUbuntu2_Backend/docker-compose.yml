@@ -59,8 +59,12 @@ services:
     image: juanriverad/hotel-frontend:latest
     ports:
       - "80:80"
-    networks:
-      - red-hotel
+    volumes:
+      - /vagrant/servidorUbuntu1_Frontend/frontend:/usr/local/apache2/htdocs/
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == servidorUbuntu1
 
   haproxy:
     image: juanriverad/hotel-haproxy:latest
