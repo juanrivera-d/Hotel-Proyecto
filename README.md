@@ -45,7 +45,7 @@ git clone [https://github.com/juanrivera-d/Hotel-Proyecto.git](https://github.co
 cd Hotel-Proyecto
 vagrant up
 
-```
+
 
 ### Paso 2: Configuración del Clúster Docker Swarm e Instalación de Dependencias
 
