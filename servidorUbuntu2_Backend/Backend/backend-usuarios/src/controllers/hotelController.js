@@ -4,11 +4,23 @@ const jwt = require('jsonwebtoken');
 
 const SECRET_KEY = 'CLAVE_SECRETA_LEYTON';
 
-// LISTAR USUARIOS
+// LISTAR USUARIOS (Con paginación)
 const listarUsuarios = async (req, res) => {
     try {
-        const usuarios = await hotelModel.listarUsuarios();
-        res.status(200).json({ mensaje: 'Usuarios obtenidos correctamente', usuarios });
+        const { page = 1, limit = 50 } = req.query;
+        const pageNum = parseInt(page) || 1;
+        const limitNum = parseInt(limit) || 50;
+        const offset = (pageNum - 1) * limitNum;
+
+        const resultado = await hotelModel.listarUsuarios(limitNum, offset);
+
+        res.status(200).json({
+            mensaje: 'Usuarios obtenidos correctamente',
+            data: resultado.data,
+            totalItems: resultado.totalItems,
+            totalPages: resultado.totalPages,
+            currentPage: pageNum
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ mensaje: 'Error al listar los usuarios' });

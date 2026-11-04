@@ -21,10 +21,23 @@ async function obtenerPagosPorReservas(listaIdsReservas) {
     return rows;
 }
 
-// Obtener todos los pagos (para uso administrativo)
-async function obtenerTodosLosPagos() {
-    const [rows] = await pool.query('SELECT * FROM pago ORDER BY idPago DESC');
-    return rows;
+// Obtener todos los pagos paginados (para uso administrativo)
+async function obtenerTodosLosPagos(limit = 50, offset = 0) {
+    const limitNum = parseInt(limit) || 50;
+    const offsetNum = parseInt(offset) || 0;
+
+    const [rows] = await pool.query(
+        'SELECT * FROM pago ORDER BY idPago DESC LIMIT ? OFFSET ?',
+        [limitNum, offsetNum]
+    );
+
+    const [[{ total }]] = await pool.query('SELECT COUNT(*) as total FROM pago');
+
+    return {
+        data: rows,
+        totalItems: total,
+        totalPages: Math.ceil(total / limitNum)
+    };
 }
 
 // Obtener pago por ID
@@ -57,10 +70,30 @@ async function crearPago(monto, metodoPago, idReserva, estado = 'Exitoso') {
     };
 }
 
+// Actualizar pago
+async function actualizarPago(idPago, metodoPago, estado) {
+    const [result] = await pool.query(
+        'UPDATE pago SET metodoPago = ?, estado = ? WHERE idPago = ?',
+        [metodoPago, estado, idPago]
+    );
+    return result;
+}
+
+// Eliminar pago
+async function eliminarPago(idPago) {
+    const [result] = await pool.query(
+        'DELETE FROM pago WHERE idPago = ?',
+        [idPago]
+    );
+    return result;
+}
+
 module.exports = {
     obtenerPagosPorReservas,
     obtenerTodosLosPagos,
     obtenerPagoPorId,
     obtenerTotalAbonado,
-    crearPago
+    crearPago,
+    actualizarPago,
+    eliminarPago
 };

@@ -144,7 +144,7 @@
     thead th:last-child { border-radius: 0 8px 8px 0; text-align: center; }
     tbody td { padding: 15px 14px; border-bottom: 1px solid var(--line); font-size: 0.92rem; vertical-align: middle; }
     tbody tr:hover { background: #faf9f5; }
-    .dropdown-menu .dropdown-item { color: #182530 !important; } 
+    .dropdown-menu .dropdown-item { color: #182530 !important; }
     .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
   </style>
 </head>
@@ -185,6 +185,13 @@
           </tbody>
         </table>
       </div>
+
+      <!-- CONTROLES DE PAGINACIÓN -->
+      <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light">
+        <button id="btn-anterior-pago" class="btn btn-sm btn-outline-secondary" onclick="cambiarPaginaPagos(-1)">← Anterior</button>
+        <span id="info-pagina-pago" class="fw-bold small text-muted">Página 1</span>
+        <button id="btn-siguiente-pago" class="btn btn-sm btn-outline-secondary" onclick="cambiarPaginaPagos(1)">Siguiente →</button>
+      </div>
     </div>
   </main>
 
@@ -199,15 +206,15 @@
         <div class="modal-body p-4">
           <form id="form-editar-pago" onsubmit="guardarEdicionPago(event)">
             <input type="hidden" id="edit-idPago">
-            
+
             <div class="mb-3">
               <label class="form-label fw-bold text-secondary small text-uppercase">ID de Reserva Asociada</label>
-              <input type="number" class="form-control" id="edit-idReserva" required>
+              <input type="number" class="form-control" id="edit-idReserva" required readonly style="background-color: #e9ecef;">
             </div>
 
             <div class="mb-3">
               <label class="form-label fw-bold text-secondary small text-uppercase">Monto del Abono ($)</label>
-              <input type="number" class="form-control" id="edit-monto" required>
+              <input type="number" class="form-control" id="edit-monto" required readonly style="background-color: #e9ecef;">
             </div>
 
             <div class="mb-3">
@@ -242,6 +249,10 @@
     const token = localStorage.getItem('token');
     const usuarioSesion = JSON.parse(localStorage.getItem('usuario') || '{}');
 
+    let paginaActualPago = 1;
+    let totalPaginasPago = 1;
+    const limitePorPaginaPago = 50;
+
     if (!token || !usuarioSesion.documento) { window.location.href = 'login.html'; }
 
     let modalEditarBs = null;
@@ -249,21 +260,25 @@
     document.addEventListener('DOMContentLoaded', () => {
       renderizarNavegacion();
       modalEditarBs = new bootstrap.Modal(document.getElementById('modalEditarPago'));
-      cargarTodosLosPagosAdmin();
+      cargarTodosLosPagosAdmin(1);
     });
 
-    async function cargarTodosLosPagosAdmin() {
+    async function cargarTodosLosPagosAdmin(pagina = 1) {
       const tbody = document.getElementById('tabla-gestion-pagos');
       try {
-        const res = await axios.get('http://192.168.100.3:3004/api/pagos', {
+        paginaActualPago = pagina;
+        const res = await axios.get(`http://192.168.100.3:3004/api/pagos?page=${pagina}&limit=${limitePorPaginaPago}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        const pagos = Array.isArray(res.data) ? res.data : (res.data.pagos || []);
+        const pagos = res.data.data || (Array.isArray(res.data) ? res.data : []);
+        totalPaginasPago = res.data.totalPages || 1;
+
         tbody.innerHTML = '';
 
         if (pagos.length === 0) {
           tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No existen pagos registrados en el sistema.</td></tr>';
+          actualizarControlesPaginacionPagos();
           return;
         }
 
@@ -287,10 +302,25 @@
               </td>
             </tr>`;
         });
+
+        actualizarControlesPaginacionPagos();
       } catch (err) {
         console.error('Error al cargar gestión de pagos:', err);
         tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Error al consultar los pagos globales del servidor.</td></tr>';
       }
+    }
+
+    function cambiarPaginaPagos(direccion) {
+      const nuevaPagina = paginaActualPago + direccion;
+      if (nuevaPagina >= 1 && nuevaPagina <= totalPaginasPago) {
+        cargarTodosLosPagosAdmin(nuevaPagina);
+      }
+    }
+
+    function actualizarControlesPaginacionPagos() {
+      document.getElementById('info-pagina-pago').innerText = `Página ${paginaActualPago} de ${totalPaginasPago}`;
+      document.getElementById('btn-anterior-pago').disabled = (paginaActualPago <= 1);
+      document.getElementById('btn-siguiente-pago').disabled = (paginaActualPago >= totalPaginasPago);
     }
 
     async function abrirEdicion(idPago) {
@@ -317,8 +347,6 @@
       event.preventDefault();
       const idPago = document.getElementById('edit-idPago').value;
       const datosActualizados = {
-        idReserva: document.getElementById('edit-idReserva').value,
-        monto: document.getElementById('edit-monto').value,
         metodoPago: document.getElementById('edit-metodoPago').value,
         estado: document.getElementById('edit-estado').value
       };
@@ -329,7 +357,7 @@
         });
         modalEditarBs.hide();
         alert('¡Pago actualizado exitosamente!');
-        cargarTodosLosPagosAdmin();
+        cargarTodosLosPagosAdmin(paginaActualPago);
       } catch (err) {
         console.error('Error al actualizar:', err);
         alert('Error al guardar los cambios del pago.');
@@ -343,7 +371,7 @@
             headers: { Authorization: `Bearer ${token}` }
           });
           alert('Comprobante de pago eliminado correctamente.');
-          cargarTodosLosPagosAdmin();
+          cargarTodosLosPagosAdmin(paginaActualPago);
         } catch (err) {
           console.error('Error al eliminar:', err);
           alert('No se pudo eliminar el pago del sistema.');

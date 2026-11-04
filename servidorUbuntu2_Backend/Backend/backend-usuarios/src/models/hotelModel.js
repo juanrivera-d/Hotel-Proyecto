@@ -11,12 +11,28 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
-// Obtener todos los usuarios
-const listarUsuarios = async () => {
+// Obtener todos los usuarios con paginación (LIMIT y OFFSET)
+const listarUsuarios = async (limit = 50, offset = 0) => {
+    const limitNum = parseInt(limit) || 50;
+    const offsetNum = parseInt(offset) || 0;
+
+    // 1. Consultar únicamente los registros de la página actual
     const [rows] = await pool.query(
-        `SELECT idUsuario, documento, nombreCompleto, email, telefono, estado, rol FROM usuario`
+        `SELECT idUsuario, documento, nombreCompleto, email, telefono, estado, rol 
+         FROM usuario ORDER BY idUsuario DESC LIMIT ? OFFSET ?`,
+        [limitNum, offsetNum]
     );
-    return rows;
+
+    // 2. Obtener el total de registros en la tabla
+    const [[{ total }]] = await pool.query(
+        `SELECT COUNT(*) as total FROM usuario`
+    );
+
+    return {
+        data: rows,
+        totalItems: total,
+        totalPages: Math.ceil(total / limitNum)
+    };
 };
 
 // Obtener usuario por ID

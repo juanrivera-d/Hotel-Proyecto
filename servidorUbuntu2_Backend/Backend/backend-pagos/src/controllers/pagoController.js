@@ -6,7 +6,7 @@ const pagoModel = require('../models/pagoModel');
 
 router.get('/', async (req, res) => {
     try {
-        const { idUsuario } = req.query;
+        const { idUsuario, page = 1, limit = 50 } = req.query;
 
         if (idUsuario) {
             const tokenHeader = req.headers['authorization'];
@@ -24,8 +24,18 @@ router.get('/', async (req, res) => {
             return res.json(pagos);
         }
 
-        const pagos = await pagoModel.obtenerTodosLosPagos();
-        res.json(pagos);
+        const pageNum = parseInt(page) || 1;
+        const limitNum = parseInt(limit) || 50;
+        const offset = (pageNum - 1) * limitNum;
+
+        const resultado = await pagoModel.obtenerTodosLosPagos(limitNum, offset);
+
+        res.json({
+            data: resultado.data,
+            totalItems: resultado.totalItems,
+            totalPages: resultado.totalPages,
+            currentPage: pageNum
+        });
     } catch (error) {
         console.error("Error al obtener pagos:", error.message);
         res.status(500).json({ error: "Error al consultar los pagos." });
@@ -76,12 +86,12 @@ router.post('/', async (req, res) => {
 
         const nuevoPago = await pagoModel.crearPago(monto, metodoPago, idReserva);
         const nuevoTotalAbonado = abonadoPrevio + Number(monto);
-        
+
         let estadoNuevoReserva = 'Pendiente';
         if (nuevoTotalAbonado >= precioTotal) {
             estadoNuevoReserva = 'Confirmada';
         } else if (nuevoTotalAbonado > 0) {
-            estadoNuevoReserva = 'Abonada'; // Cambiado a Abonada formalmente
+            estadoNuevoReserva = 'Abonada';
         }
 
         try {
@@ -121,11 +131,7 @@ router.put('/:id', async (req, res) => {
         const { id } = req.params;
         const { metodoPago, estado } = req.body;
 
-        const pool = require('mysql2/promise').createPool({
-            host: 'localhost', user: 'root', password: 'root', database: 'bd_pagos'
-        });
-
-        await pool.query('UPDATE pago SET metodoPago = ?, estado = ? WHERE idPago = ?', [metodoPago, estado, id]);
+        await pagoModel.actualizarPago(id, metodoPago, estado);
         res.json({ mensaje: "Pago actualizado con éxito" });
     } catch (error) {
         console.error("Error al actualizar pago:", error);
@@ -136,11 +142,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const pool = require('mysql2/promise').createPool({
-            host: 'localhost', user: 'root', password: 'root', database: 'bd_pagos'
-        });
-
-        await pool.query('DELETE FROM pago WHERE idPago = ?', [id]);
+        await pagoModel.eliminarPago(id);
         res.json({ mensaje: "Pago eliminado con éxito" });
     } catch (error) {
         console.error("Error al eliminar pago:", error);

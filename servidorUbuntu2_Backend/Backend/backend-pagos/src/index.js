@@ -14,7 +14,7 @@ app.use(express.json());
 
 const SECRET_KEY = 'CLAVE_SECRETA_LEYTON';
 
-// Middleware para verificar JWT en escrituras (POST)
+// Middleware para verificar JWT en escrituras (POST, PUT, DELETE)
 function verificarToken(req, res, next) {
   if (req.method === 'GET') {
     return next();
@@ -37,6 +37,15 @@ function verificarToken(req, res, next) {
 
 // Montar el Router de pagos
 app.use('/api/pagos', verificarToken, pagoController);
+
+// Evita que el proceso se caiga por errores no controlados
+process.on('uncaughtException', (err) => {
+  console.error('Excepción no controlada:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Promesa rechazada sin manejar:', reason);
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Microservicio de Pagos ejecutándose en http://192.168.100.3:${PORT}`);

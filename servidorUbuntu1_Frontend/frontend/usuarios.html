@@ -18,7 +18,7 @@
     .btn-gold:hover { background-color: #967027; color: #fff; }
     .btn-admin-panel { background-color: transparent; color: #b68a35 !important; border: 1px solid #b68a35; font-weight: 700; }
     .btn-admin-panel:hover { background-color: #b68a35; color: #fff !important; }
-    .dropdown-menu .dropdown-item { color: #182530 !important; } 
+    .dropdown-menu .dropdown-item { color: #182530 !important; }
     .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
   </style>
 </head>
@@ -75,7 +75,7 @@
             <input type="text" id="buscarDocumento" class="form-control form-control-sm" placeholder="Ej: 100101" style="width: 150px;">
             <button onclick="buscarPorDocumento()" class="btn btn-sm btn-gold">Buscar</button>
           </div>
-          <button onclick="listarUsuarios()" class="btn btn-sm btn-outline-dark ms-auto">Listar Todos</button>
+          <button onclick="listarUsuarios(1)" class="btn btn-sm btn-outline-dark ms-auto">Listar Todos</button>
         </div>
       </div>
 
@@ -141,6 +141,13 @@
               <tbody id="tablaUsuarios"></tbody>
             </table>
           </div>
+
+          <!-- BARRA DE PAGINACIÓN -->
+          <div id="contenedorPaginacion" class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+            <button id="btn-anterior-usr" class="btn btn-sm btn-outline-secondary" onclick="cambiarPaginaUsuarios(-1)">← Anterior</button>
+            <span id="info-pagina-usr" class="fw-bold small text-muted">Página 1</span>
+            <button id="btn-siguiente-usr" class="btn btn-sm btn-outline-secondary" onclick="cambiarPaginaUsuarios(1)">Siguiente →</button>
+          </div>
         </div>
       </div>
     </div>
@@ -150,6 +157,10 @@
     const API_USUARIOS = 'http://192.168.100.3:3001/api/usuarios';
     const token = localStorage.getItem('token');
     const usuarioSesion = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+    let paginaActualUsr = 1;
+    let totalPaginasUsr = 1;
+    const limitePorPaginaUsr = 50;
 
     if (!token || !usuarioSesion.documento) { window.location.href = 'login.html'; }
 
@@ -170,14 +181,21 @@
           </ul>
         </div>`;
 
-      listarUsuarios();
+      listarUsuarios(1);
     });
 
-    async function listarUsuarios() {
+    async function listarUsuarios(pagina = 1) {
       try {
-        const res = await axios.get(API_USUARIOS, { headers: { Authorization: `Bearer ${token}` } });
-        const lista = res.data.usuarios || res.data;
+        paginaActualUsr = pagina;
+        const res = await axios.get(`${API_USUARIOS}?page=${pagina}&limit=${limitePorPaginaUsr}`, { 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
+
+        const lista = res.data.data || res.data.usuarios || (Array.isArray(res.data) ? res.data : []);
+        totalPaginasUsr = res.data.totalPages || 1;
+
         mostrarTabla(lista);
+        actualizarControlesPaginacionUsuarios(true);
       } catch (err) { console.error(err); }
     }
 
@@ -200,12 +218,32 @@
       });
     }
 
+    function cambiarPaginaUsuarios(direccion) {
+      const nuevaPagina = paginaActualUsr + direccion;
+      if (nuevaPagina >= 1 && nuevaPagina <= totalPaginasUsr) {
+        listarUsuarios(nuevaPagina);
+      }
+    }
+
+    function actualizarControlesPaginacionUsuarios(mostrar = true) {
+      const contenedor = document.getElementById('contenedorPaginacion');
+      if (!mostrar) {
+        contenedor.style.display = 'none';
+        return;
+      }
+      contenedor.style.display = 'flex';
+      document.getElementById('info-pagina-usr').innerText = `Página ${paginaActualUsr} de ${totalPaginasUsr}`;
+      document.getElementById('btn-anterior-usr').disabled = (paginaActualUsr <= 1);
+      document.getElementById('btn-siguiente-usr').disabled = (paginaActualUsr >= totalPaginasUsr);
+    }
+
     async function buscarPorId() {
       const id = document.getElementById('buscarId').value;
       if (!id) return alert('Ingrese un ID');
       try {
         const res = await axios.get(`${API_USUARIOS}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
         mostrarTabla([res.data]);
+        actualizarControlesPaginacionUsuarios(false);
       } catch (err) { alert('Usuario no encontrado'); }
     }
 
@@ -215,6 +253,7 @@
       try {
         const res = await axios.get(`${API_USUARIOS}/documento/${doc}`, { headers: { Authorization: `Bearer ${token}` } });
         mostrarTabla([res.data]);
+        actualizarControlesPaginacionUsuarios(false);
       } catch (err) { alert('Usuario no encontrado'); }
     }
 
@@ -256,7 +295,7 @@
           alert('Usuario creado correctamente');
         }
         limpiarFormulario();
-        listarUsuarios();
+        listarUsuarios(paginaActualUsr);
       } catch (err) { alert(err.response?.data?.mensaje || 'Error al guardar usuario'); }
     }
 
