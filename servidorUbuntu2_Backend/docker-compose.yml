@@ -61,11 +61,12 @@ services:
       - "80:80"
     volumes:
       - /vagrant/servidorUbuntu1_Frontend/frontend:/usr/local/apache2/htdocs/
+    networks:
+      - red-hotel
     deploy:
       placement:
         constraints:
           - node.hostname == servidorUbuntu1
-
   haproxy:
     image: juanriverad/hotel-haproxy:latest
     ports:
