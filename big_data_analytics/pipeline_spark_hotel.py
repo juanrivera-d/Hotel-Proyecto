@@ -1,13 +1,14 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, count, sum, avg, month, year, when, current_date
 
-# Inicializar Spark con el conector JDBC de MySQL
+# Inicializar Spark con descarga automática del conector JDBC
 spark = SparkSession.builder \
     .appName("HotelBigDataAnalytics") \
     .config("spark.jars.packages", "mysql:mysql-connector-java:8.0.28") \
     .getOrCreate()
 
-jdbc_url_base = "jdbc:mysql://10.0.1.13:3306/"
+# IP real del servidor MySQL en tu red de Vagrant / Swarm (192.168.100.3 o 127.0.0.1)
+jdbc_url_base = "jdbc:mysql://192.168.100.3:3306/"
 connection_properties = {
     "user": "root",
     "password": "root",
