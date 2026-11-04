@@ -8,16 +8,31 @@ const connection = mysql.createPool({
     database: process.env.DB_NAME || 'db_reservas'
 });
 
-async function obtenerReservas() {
+async function obtenerReservas(limit = 50, offset = 0) {
+    // 1. Ejecutar auto-cancelación limpia
     await connection.query(`
-        UPDATE reserva 
-        SET estado = 'Cancelada' 
-        WHERE estado = 'Pendiente' 
+        UPDATE reserva
+        SET estado = 'Cancelada'
+        WHERE estado = 'Pendiente'
         AND TIMESTAMPDIFF(SECOND, fechaCreacion, NOW()) >= 120
     `).catch(() => {});
 
-    const [rows] = await connection.query('SELECT * FROM reserva ORDER BY idReserva DESC');
-    return rows;
+    // 2. Consultar los datos de la página actual con LIMIT y OFFSET
+    const [rows] = await connection.query(
+        'SELECT * FROM reserva ORDER BY idReserva DESC LIMIT ? OFFSET ?',
+        [parseInt(limit), parseInt(offset)]
+    );
+
+    // 3. Consultar el total de registros en la tabla
+    const [[{ total }]] = await connection.query(
+        'SELECT COUNT(*) as total FROM reserva'
+    );
+
+    return {
+        data: rows,
+        totalItems: total,
+        totalPages: Math.ceil(total / limit)
+    };
 }
 
 async function obtenerReservaPorId(idReserva) {
@@ -130,9 +145,9 @@ async function confirmarReserva(idReserva, nuevoEstado = 'Confirmada') {
 async function obtenerReservasPorUsuario(idUsuario) {
     // 1. Ejecutar auto-cancelación primero para que limpie los vencidos de este usuario
     await connection.query(`
-        UPDATE reserva 
-        SET estado = 'Cancelada' 
-        WHERE estado = 'Pendiente' 
+        UPDATE reserva
+        SET estado = 'Cancelada'
+        WHERE estado = 'Pendiente'
         AND TIMESTAMPDIFF(SECOND, fechaCreacion, NOW()) >= 120
     `).catch(() => {});
 

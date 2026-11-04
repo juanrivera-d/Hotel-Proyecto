@@ -31,12 +31,24 @@ app.get('/api/reservas/disponibilidad', async (req, res) => {
 
 app.get('/api/reservas', async (req, res) => {
     try {
-        const { idUsuario } = req.query;
+        const { idUsuario, page = 1, limit = 50 } = req.query;
         let reservas;
+
         if (idUsuario) {
             reservas = await reservaModel.obtenerReservasPorUsuario(idUsuario);
         } else {
-            reservas = await reservaModel.obtenerReservas();
+            const pageNum = parseInt(page) || 1;
+            const limitNum = parseInt(limit) || 50;
+            const offset = (pageNum - 1) * limitNum;
+
+            const resultado = await reservaModel.obtenerReservas(limitNum, offset);
+
+            reservas = {
+                data: resultado.data,
+                totalItems: resultado.totalItems,
+                totalPages: resultado.totalPages,
+                currentPage: pageNum
+            };
         }
         res.json(reservas);
     } catch (error) {

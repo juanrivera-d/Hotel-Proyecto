@@ -18,7 +18,7 @@
     .btn-gold:hover { background-color: #967027; color: #fff; }
     .btn-admin-panel { background-color: transparent; color: #b68a35 !important; border: 1px solid #b68a35; font-weight: 700; }
     .btn-admin-panel:hover { background-color: #b68a35; color: #fff !important; }
-    .dropdown-menu .dropdown-item { color: #182530 !important; } 
+    .dropdown-menu .dropdown-item { color: #182530 !important; }
     .dropdown-menu .dropdown-item:hover { background-color: var(--gold-light, #f4ead3) !important; color: var(--ink, #182530) !important; }
   </style>
 </head>
@@ -69,6 +69,13 @@
           <tbody id="tabla-gestion-body"></tbody>
         </table>
       </div>
+
+      <!-- BARRA DE NAVEGACIÓN Y PAGINACIÓN -->
+      <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+        <button id="btn-anterior" class="btn btn-sm btn-outline-secondary" onclick="cambiarPagina(-1)">← Anterior</button>
+        <span id="info-pagina" class="fw-bold small text-muted">Página 1</span>
+        <button id="btn-siguiente" class="btn btn-sm btn-outline-secondary" onclick="cambiarPagina(1)">Siguiente →</button>
+      </div>
     </div>
   </div>
 
@@ -76,6 +83,10 @@
     const API_RESERVAS = 'http://192.168.100.3:3003/api/reservas';
     const token = localStorage.getItem('token');
     const usuarioSesion = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+    let paginaActual = 1;
+    let totalPaginas = 1;
+    const limitePorPagina = 50;
 
     if (!token || !usuarioSesion.documento) { window.location.href = 'login.html'; }
 
@@ -96,15 +107,24 @@
           </ul>
         </div>`;
 
-      cargarTodasLasReservas();
+      cargarTodasLasReservas(1);
     });
 
-    async function cargarTodasLasReservas() {
+    async function cargarTodasLasReservas(pagina = 1) {
       try {
-        const res = await axios.get(API_RESERVAS, { headers: { Authorization: `Bearer ${token}` } });
+        paginaActual = pagina;
+        const res = await axios.get(`${API_RESERVAS}?page=${pagina}&limit=${limitePorPagina}`, { 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
+        
+        // Manejo compatible si devuelve la estructura paginada { data, totalPages, ... } o el arreglo legacy
+        const reservas = res.data.data || (Array.isArray(res.data) ? res.data : []);
+        totalPaginas = res.data.totalPages || 1;
+
         const tbody = document.getElementById('tabla-gestion-body');
         tbody.innerHTML = '';
-        res.data.forEach(r => {
+        
+        reservas.forEach(r => {
           tbody.innerHTML += `
             <tr>
               <td><strong>#${r.idReserva}</strong></td>
@@ -120,12 +140,27 @@
               </td>
             </tr>`;
         });
+
+        actualizarControlesPaginacion();
       } catch (err) { console.error(err); }
+    }
+
+    function cambiarPagina(direccion) {
+      const nuevaPagina = paginaActual + direccion;
+      if (nuevaPagina >= 1 && nuevaPagina <= totalPaginas) {
+        cargarTodasLasReservas(nuevaPagina);
+      }
+    }
+
+    function actualizarControlesPaginacion() {
+      document.getElementById('info-pagina').innerText = `Página ${paginaActual} de ${totalPaginas}`;
+      document.getElementById('btn-anterior').disabled = (paginaActual <= 1);
+      document.getElementById('btn-siguiente').disabled = (paginaActual >= totalPaginas);
     }
 
     async function cambiarEstado(id, nuevoEstado) {
       await axios.put(`${API_RESERVAS}/${id}`, { estado: nuevoEstado }, { headers: { Authorization: `Bearer ${token}` } });
-      cargarTodasLasReservas();
+      cargarTodasLasReservas(paginaActual);
     }
 
     function cerrarSesion() { if (confirm('¿Deseas cerrar tu sesión?')) { localStorage.clear(); window.location.href = 'login.html'; } }
