@@ -78,6 +78,15 @@ services:
     networks:
       - red-hotel
 
+  backend-analitica:
+    image: juanriverad/hotel-backend-analitica:latest
+    ports:
+      - "3005:3005"
+    environment:
+      - DB_HOST=db-mysql
+    networks:
+      - red-hotel
+
   db-mysql:
     image: mysql:8.0
     ports:
