@@ -11,7 +11,7 @@ El entorno está orquestado mediante **Vagrant** y **Docker Swarm** a través de
 - **`servidorUbuntu1` (`192.168.100.2`):** Nodo Worker / Capa de Presentación. Aloja el contenedor del Frontend web (Apache HTTPD) expuesto en el puerto `80`.
 - **`servidorUbuntu2` (`192.168.100.3`):** Nodo Manager / Núcleo de Orquestación, Datos y Analítica.
   - **Balanceador de Carga:** HAProxy (puerto `5080`, panel de estadísticas en `/haproxy?stats`).
-  - **Microservicios Backend (Node.js/Express):** Servicios (`3000`), Usuarios (`3001`), Habitaciones (`3002`), Reservas (`3003`) y Pagos (`3004`).
+  - **Microservicios Backend (Node.js/Express):** Servicios (`3000`), Usuarios (`3001`), Habitaciones (`3002`), Reservas (`3003`), Pagos (`3004`) y Backend Analítico (`3005`).
   - **Base de Datos Relacional:** MySQL 8.0 (`db-mysql` en puerto `3306`).
   - **Motor de Big Data:** Apache Spark (PySpark) + Conector JDBC MySQL.
 
@@ -156,7 +156,7 @@ Una vez desplegados los servicios, se pueden verificar los siguientes accesos:
 - **Panel de Estadísticas HAProxy:** [http://192.168.100.3:5080/haproxy?stats](http://192.168.100.3:5080/haproxy?stats)
 - **Balanceador HAProxy / Rutas Backend:** `http://192.168.100.3:5080/api/{recurso}`
 
-### Endpoints disponibles
+### Endpoints Transaccionales
 
 - `/api/servicios` (Puerto `3000`)
 - `/api/usuarios` (Puerto `3001`)
@@ -164,5 +164,8 @@ Una vez desplegados los servicios, se pueden verificar los siguientes accesos:
 - `/api/reservas` (Puerto `3003`)
 - `/api/pagos` (Puerto `3004`)
 
----
+### Endpoints Analíticos (Big Data)
 
+- `/api/analytics/trafico-logs` (Puerto `3005`)
+- `/api/analytics/sentimiento-resenas` (Puerto `3005`)
+- `/api/analytics/ocupacion-mensual` (Puerto `3005`)
