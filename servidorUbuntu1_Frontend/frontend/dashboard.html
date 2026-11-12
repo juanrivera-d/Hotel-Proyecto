@@ -1,0 +1,219 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Dashboard analítico | Hotel Leyton</title>
+
+  <!-- Bootstrap 5 -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <!-- Estilos propios -->
+  <link rel="stylesheet" href="css/dashboard.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js" defer></script>
+
+  <!-- Lógica del dashboard -->
+  <script src="js/dashboard.js" defer></script>
+</head>
+
+<body>
+
+  <!-- BARRA DE NAVEGACIÓN -->
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html">
+        <span class="brand-white">Hotel</span>
+        <span class="brand-gold">Leyton</span>
+      </a>
+
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarNav"
+        aria-label="Abrir navegación"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
+
+          <li class="nav-item">
+            <a class="nav-link" href="index.html">Inicio</a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="gestion-reservas.html">
+              Gestión de reservas
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link active" href="dashboard.html"
+               aria-current="page">
+              Dashboard analítico
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="btn btn-outline-light btn-sm" href="index.html">
+              Volver al sistema
+            </a>
+          </li>
+
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="dashboard-container">
+
+    <!-- ENCABEZADO -->
+    <header class="dashboard-header">
+      <div>
+        <p class="eyebrow">INTELIGENCIA DE NEGOCIO</p>
+        <h1>Dashboard Analítico</h1>
+        <p class="subtitle">
+          Monitoreo de operaciones hoteleras mediante
+          Apache Spark y análisis de datos.
+        </p>
+      </div>
+
+      <button
+        id="btn-actualizar"
+        class="btn btn-gold"
+        type="button"
+      >
+        Actualizar datos
+      </button>
+    </header>
+
+    <!-- ESTADO DE CONEXIÓN -->
+    <div
+      id="estado-conexion"
+      class="alert alert-info"
+      role="status"
+      aria-live="polite"
+    >
+      Preparando conexión con el servicio de analítica...
+    </div>
+
+    <!-- INDICADORES -->
+    <section class="row g-3 mb-4" aria-label="Indicadores principales">
+
+      <div class="col-12 col-md-4">
+        <article class="kpi-card">
+          <span class="kpi-label">Eventos de tráfico</span>
+          <h2 id="kpi-logs">--</h2>
+          <p>Eventos procesados</p>
+        </article>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <article class="kpi-card">
+          <span class="kpi-label">Reseñas analizadas</span>
+          <h2 id="kpi-resenas">--</h2>
+          <p>Opiniones de huéspedes</p>
+        </article>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <article class="kpi-card">
+          <span class="kpi-label">Ocupación promedio</span>
+          <h2 id="kpi-ocupacion">--</h2>
+          <p>Porcentaje de ocupación</p>
+        </article>
+      </div>
+
+    </section>
+
+    <!-- GRÁFICO 1: TRÁFICO DE LOGS -->
+    <section class="chart-card mb-4">
+      <div class="chart-heading">
+        <div>
+          <h2>Tráfico de Logs</h2>
+          <p>Distribución de eventos registrados en el sistema.</p>
+        </div>
+        <span class="chart-tag">Big Data</span>
+      </div>
+
+      <div class="chart-wrapper">
+        <canvas
+          id="grafico-logs"
+          role="img"
+          aria-label="Gráfico de barras de tráfico de logs"
+        ></canvas>
+      </div>
+    </section>
+
+    <!-- GRÁFICOS 2 Y 3 -->
+    <div class="row g-4">
+
+      <!-- SENTIMIENTO -->
+      <div class="col-12 col-lg-5">
+        <section class="chart-card h-100">
+          <div class="chart-heading">
+            <div>
+              <h2>Sentimiento de Reseñas</h2>
+              <p>Análisis de opiniones de huéspedes.</p>
+            </div>
+          </div>
+
+          <div class="chart-wrapper">
+            <canvas
+              id="grafico-sentimiento"
+              role="img"
+              aria-label="Gráfico de dona de sentimientos"
+            ></canvas>
+          </div>
+        </section>
+      </div>
+
+      <!-- OCUPACIÓN -->
+      <div class="col-12 col-lg-7">
+        <section class="chart-card h-100">
+          <div class="chart-heading">
+            <div>
+              <h2>Ocupación mensual</h2>
+              <p>Evolución de la ocupación hotelera.</p>
+            </div>
+          </div>
+
+          <div class="chart-wrapper">
+            <canvas
+              id="grafico-ocupacion"
+              role="img"
+              aria-label="Gráfico de líneas de ocupación mensual"
+            ></canvas>
+          </div>
+        </section>
+      </div>
+
+    </div>
+
+    <!-- INFORMACIÓN TÉCNICA -->
+    <footer class="dashboard-footer">
+      <p>
+        Hotel Leyton · Sistema de Gestión Hotelera
+      </p>
+      <p>
+        Docker Swarm · Apache Spark · MySQL · Chart.js
+      </p>
+    </footer>
+
+  </main>
+
+  <!-- Bootstrap JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
