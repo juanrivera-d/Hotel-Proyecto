@@ -150,11 +150,17 @@ docker exec -it $(docker ps -q -f name=db-mysql) mysql -u root -proot -e "USE bd
 
 ## 7. Verificación de Accesos y Endpoints
 
-Una vez desplegados los servicios, se pueden verificar los siguientes accesos:
+Una vez desplegados los servicios y ejecutado el pipeline de Spark, se pueden verificar los siguientes accesos:
 
 - **Aplicación Web Frontend:** [http://192.168.100.2](http://192.168.100.2)
+- **Dashboard Analítico (Solo Administradores):** [http://192.168.100.2/dashboard.html](http://192.168.100.2/dashboard.html)
 - **Panel de Estadísticas HAProxy:** [http://192.168.100.3:5080/haproxy?stats](http://192.168.100.3:5080/haproxy?stats)
 - **Balanceador HAProxy / Rutas Backend:** `http://192.168.100.3:5080/api/{recurso}`
+
+### Acceso y Visualización del Dashboard Analítico (Rol 4)
+
+- **Control de Acceso:** La vista `dashboard.html` está integrada en el menú desplegable **Administración** de todas las vistas administrativas y valida la sesión activa (`localStorage`), redirigiendo automáticamente a usuarios sin rol de Administrador.
+- **Indicadores y Gráficas (Chart.js):** Consume los datos agregados de `bd_analytics` a través de HAProxy para mostrar KPIs en tiempo real y tres visualizaciones: distribución de tráfico de logs, análisis de sentimiento de reseñas por categoría de habitación y porcentaje real de ocupación mensual.
 
 ### Endpoints Transaccionales
 
