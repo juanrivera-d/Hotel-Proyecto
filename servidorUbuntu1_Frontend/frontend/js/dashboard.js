@@ -1,10 +1,10 @@
-
+﻿
 /* ==========================================
    HOTEL LEYTON - DASHBOARD ANALÍTICO
    Rol 4: Frontend & Dashboard
    ========================================== */
 
-const API_BASE = "http://192.168.100.3:5080";
+const API_BASE = "";
 
 const ENDPOINTS = {
   logs: "/api/analytics/trafico-logs",
@@ -587,3 +587,4 @@ document.addEventListener("DOMContentLoaded", () => {
     renderizarNavegacionAdmin();
   }
 }
+

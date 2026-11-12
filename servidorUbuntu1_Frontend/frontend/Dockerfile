@@ -1,3 +1,3 @@
 FROM httpd:alpine
-COPY . /usr/local/apache2/htdocs/capasFront
+COPY . /usr/local/apache2/htdocs/
 EXPOSE 80
