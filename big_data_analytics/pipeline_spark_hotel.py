@@ -1,54 +1,260 @@
+import os
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, count, sum, avg, month, year, when, current_date
+from pyspark.sql import functions as F
 
-# Inicializar Spark con descarga automática del conector JDBC
-spark = SparkSession.builder \
-    .appName("HotelBigDataAnalytics") \
-    .config("spark.jars.packages", "mysql:mysql-connector-java:8.0.28") \
+MYSQL_USER = os.environ["HOTEL_MYSQL_USER"]
+MYSQL_PASSWORD = os.environ["HOTEL_MYSQL_PASSWORD"]
+
+spark = (
+    SparkSession.builder
+    .appName("HotelAnalyticsV2")
+    .master("local[1]")
+    .config("spark.driver.memory", "512m")
+    .config("spark.sql.shuffle.partitions", "4")
     .getOrCreate()
+)
 
-# IP real del servidor MySQL en tu red de Vagrant / Swarm (192.168.100.3 o 127.0.0.1)
-jdbc_url_base = "jdbc:mysql://192.168.100.3:3306/"
-connection_properties = {
-    "user": "root",
-    "password": "root",
-    "driver": "com.mysql.cj.jdbc.Driver"
-}
+BASE = "jdbc:mysql://192.168.100.3:3306/"
 
-print("--- PROCESANDO RESUMEN DE TRÁFICO DE LOGS ---")
-df_logs = spark.read.jdbc(jdbc_url_base + "db_logs?useSSL=false&serverTimezone=UTC", "log_evento", properties=connection_properties)
-df_trafico = df_logs.groupBy("endpoint") \
-    .agg(
-        count("*").alias("total_interacciones"),
-        sum(when(col("statusCode") >= 400, 1).otherwise(0)).alias("errores_detectados")
-    ) \
-    .withColumnRenamed("endpoint", "endpoint_consultado") \
-    .withColumn("fecha_procesamiento", current_date())
-
-df_trafico.write.jdbc(jdbc_url_base + "bd_analytics?useSSL=false&serverTimezone=UTC", "resumen_trafico_logs", mode="overwrite", properties=connection_properties)
-
-print("--- PROCESANDO SENTIMIENTO DE RESEÑAS ---")
-df_resenas = spark.read.jdbc(jdbc_url_base + "db_resenas?useSSL=false&serverTimezone=UTC", "resena", properties=connection_properties)
-df_sentimiento = df_resenas.groupBy("idHabitacion") \
-    .agg(
-        avg("calificacion").alias("promedio_calificacion"),
-        sum(when(col("calificacion") >= 4, 1).otherwise(0)).alias("total_positivas"),
-        sum(when(col("calificacion") <= 2, 1).otherwise(0)).alias("total_negativas")
-    ) \
-    .withColumnRenamed("idHabitacion", "categoria_habitacion")
-df_sentimiento.write.jdbc(jdbc_url_base + "bd_analytics?useSSL=false&serverTimezone=UTC", "resumen_sentimiento_resenas", mode="overwrite", properties=connection_properties)
-
-print("--- PROCESANDO OCUPACIÓN MENSUAL ---")
-df_reservas = spark.read.jdbc(jdbc_url_base + "db_reservas?useSSL=false&serverTimezone=UTC", "reserva", properties=connection_properties)
-df_ocupacion = df_reservas \
-    .withColumn("mes", month(col("fechaEntrada"))) \
-    .withColumn("anio", year(col("fechaEntrada"))) \
-    .groupBy("mes", "anio") \
-    .agg(
-        count("idReserva").alias("total_reservas"),
-        sum("precioTotal").alias("ingresos_totales"),
-        (count("idReserva") * 2.5).alias("porcentaje_ocupacion")
+def leer(base_datos, tabla):
+    return (
+        spark.read.format("jdbc")
+        .option("url", BASE + base_datos + "?useSSL=false&serverTimezone=UTC")
+        .option("dbtable", tabla)
+        .option("user", MYSQL_USER)
+        .option("password", MYSQL_PASSWORD)
+        .option("driver", "com.mysql.cj.jdbc.Driver")
+        .load()
     )
-df_ocupacion.write.jdbc(jdbc_url_base + "bd_analytics?useSSL=false&serverTimezone=UTC", "resumen_ocupacion_mensual", mode="overwrite", properties=connection_properties)
 
-print("--- PIPELINE EJECUTADO Y TABLAS POBLADAS CON ÉXITO ---")
+try:
+    # 1. TRAFICO DE LOGS
+    print("\n=== TRAFICO DE LOGS ===")
+
+    logs = leer("db_logs", "log_evento")
+
+    trafico = (
+        logs.groupBy("endpoint")
+        .agg(
+            F.count("*").alias("total_interacciones"),
+            F.sum(
+                F.when(F.col("statusCode") >= 400, 1)
+                 .otherwise(0)
+            ).alias("errores_detectados")
+        )
+        .withColumnRenamed("endpoint", "endpoint_consultado")
+        .withColumn("fecha_procesamiento", F.current_date())
+    )
+
+    trafico.orderBy(
+        F.desc("total_interacciones")
+    ).show(10, truncate=False)
+
+    # 2. SENTIMIENTO DE RESEÑAS
+    print("\n=== SENTIMIENTO DE RESEÑAS ===")
+
+    resenas = leer("db_resenas", "resena")
+    habitaciones = leer("db_habitacion", "habitacion")
+
+    sentimiento = (
+        resenas.alias("r")
+        .join(
+            habitaciones.alias("h"),
+            F.col("r.idHabitacion") == F.col("h.idHabitacion"),
+            "inner"
+        )
+        .groupBy(F.col("h.tipo"))
+        .agg(
+            F.round(
+                F.avg("r.calificacion"), 2
+            ).alias("promedio_calificacion"),
+            F.sum(
+                F.when(F.col("r.calificacion") >= 4, 1)
+                 .otherwise(0)
+            ).alias("total_positivas"),
+            F.sum(
+                F.when(F.col("r.calificacion") <= 2, 1)
+                 .otherwise(0)
+            ).alias("total_negativas")
+        )
+        .withColumnRenamed("tipo", "categoria_habitacion")
+    )
+
+    sentimiento.show(truncate=False)
+
+
+    # 3. OCUPACION MENSUAL
+    print("\n=== OCUPACION MENSUAL ===")
+
+    reservas = leer("db_reservas", "reserva")
+
+    validas = reservas.filter(
+        F.col("estado").isin("Confirmada", "Abonada")
+    )
+
+    # Contar cada reserva en su mes de entrada
+    conteo_reservas = (
+        validas
+        .groupBy(
+            F.year("fechaEntrada").alias("anio"),
+            F.month("fechaEntrada").alias("mes")
+        )
+        .agg(F.count("*").alias("total_reservas"))
+    )
+
+    # Calcular la duración real de cada estancia
+    reservas_con_noches = validas.withColumn(
+        "duracion_noches",
+        F.datediff("fechaSalida", "fechaEntrada")
+    )
+
+    # Distribuir cada estancia por noches, incluso entre meses
+    noches = (
+        reservas_con_noches
+        .withColumn(
+            "fecha_noche",
+            F.explode(
+                F.sequence(
+                    F.to_date("fechaEntrada"),
+                    F.date_sub(F.to_date("fechaSalida"), 1)
+                )
+            )
+        )
+        .withColumn("anio", F.year("fecha_noche"))
+        .withColumn("mes", F.month("fecha_noche"))
+        .withColumn(
+            "ingreso_noche",
+            F.col("precioTotal") / F.col("duracion_noches")
+        )
+    )
+
+    resumen_noches = (
+        noches.groupBy("anio", "mes")
+        .agg(
+            F.count("*").alias("noches_ocupadas"),
+            F.sum("ingreso_noche").alias("ingresos_totales")
+        )
+    )
+
+    ocupacion = (
+        resumen_noches
+        .join(conteo_reservas, ["anio", "mes"], "left")
+        .fillna({"total_reservas": 0})
+        .withColumn(
+            "dias_mes",
+            F.dayofmonth(
+                F.last_day(
+                    F.make_date("anio", "mes", F.lit(1))
+                )
+            )
+        )
+        .withColumn(
+            "porcentaje_ocupacion",
+            F.round(
+                F.col("noches_ocupadas")
+                / (F.lit(20) * F.col("dias_mes")) * 100,
+                2
+            )
+        )
+        .withColumn(
+            "ingresos_totales",
+            F.round("ingresos_totales", 2)
+        )
+    )
+
+    print("\n=== VALIDACION FINANCIERA ===")
+
+    validacion = ocupacion.agg(
+        F.sum("ingresos_totales").alias("total_ingresos"),
+        F.sum("total_reservas").alias("total_reservas"),
+        F.count("*").alias("meses_procesados")
+    )
+
+    validacion.show(truncate=False)
+
+    ocupacion.select(
+        "anio",
+        "mes",
+        "total_reservas",
+        "ingresos_totales",
+        "porcentaje_ocupacion"
+    ).orderBy(
+        F.desc("anio"),
+        F.desc("mes")
+    ).show(12, truncate=False)
+
+
+    # 4. CARGA DE RESULTADOS A MYSQL
+    print("\n=== PREPARANDO CARGA ANALITICA ===")
+
+    tablas = [
+        "resumen_trafico_logs",
+        "resumen_sentimiento_resenas",
+        "resumen_ocupacion_mensual"
+    ]
+
+    # Impedir cargas duplicadas.
+    for tabla in tablas:
+        cantidad = leer("bd_analytics", tabla).count()
+
+        if cantidad != 0:
+            raise RuntimeError(
+                f"Carga cancelada: {tabla} contiene {cantidad} registros"
+            )
+
+    print("Las tres tablas estan vacias. Iniciando carga.")
+
+    def guardar(df, tabla):
+        (
+            df.write.format("jdbc")
+            .option(
+                "url",
+                BASE + "bd_analytics?useSSL=false&serverTimezone=UTC"
+            )
+            .option("dbtable", tabla)
+            .option("user", MYSQL_USER)
+            .option("password", MYSQL_PASSWORD)
+            .option("driver", "com.mysql.cj.jdbc.Driver")
+            .option("batchsize", "1000")
+            .mode("append")
+            .save()
+        )
+
+        print(f"Carga completada: {tabla}")
+
+    guardar(
+        trafico.select(
+            "endpoint_consultado",
+            F.col("total_interacciones").cast("int"),
+            F.col("errores_detectados").cast("int"),
+            "fecha_procesamiento"
+        ),
+        "resumen_trafico_logs"
+    )
+
+    guardar(
+        sentimiento.select(
+            "categoria_habitacion",
+            F.col("promedio_calificacion").cast("decimal(3,2)"),
+            F.col("total_positivas").cast("int"),
+            F.col("total_negativas").cast("int")
+        ),
+        "resumen_sentimiento_resenas"
+    )
+
+    guardar(
+        ocupacion.select(
+            F.col("mes").cast("int"),
+            F.col("anio").cast("int"),
+            F.col("total_reservas").cast("int"),
+            F.col("ingresos_totales").cast("decimal(12,2)"),
+            F.col("porcentaje_ocupacion").cast("decimal(5,2)")
+        ),
+        "resumen_ocupacion_mensual"
+    )
+
+    print("\nCARGA ANALITICA FINALIZADA")
+
+
+finally:
+    spark.stop()

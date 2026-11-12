@@ -1,0 +1,379 @@
+
+/* ==========================================
+   HOTEL LEYTON - DASHBOARD ANALÍTICO
+   Rol 4: Frontend & Dashboard
+   ========================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* 1. VARIABLES DE DISEÑO */
+
+:root {
+  --ink: #182530;
+  --navy: #1d2933;
+  --navy-soft: #344451;
+  --gold: #b68a35;
+  --gold-dark: #967027;
+  --gold-light: #f4ead3;
+  --parchment: #f6f2e8;
+  --paper: #ffffff;
+  --slate: #32424b;
+  --gray: #6d747b;
+  --border: #e3dac5;
+  --green: #168653;
+  --red: #e63946;
+  --line: #e8e5de;
+  --shadow: 0 10px 30px rgba(31, 41, 51, 0.08);
+}
+
+/* 2. CONFIGURACIÓN GENERAL */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--parchment);
+  color: var(--slate);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 3. BARRA DE NAVEGACIÓN */
+
+.navbar {
+  background-color: var(--ink) !important;
+  border-bottom: 3px solid var(--gold);
+  padding: 15px 0;
+}
+
+.navbar-brand {
+  font-family: 'Fraunces', serif;
+  font-size: 1.5rem;
+  letter-spacing: -0.5px;
+}
+
+.brand-white {
+  color: #ffffff;
+}
+
+.brand-gold {
+  color: var(--gold);
+  font-style: italic;
+}
+
+.navbar .nav-link {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+  color: var(--gold);
+}
+
+.navbar .btn-outline-light {
+  border-color: rgba(255, 255, 255, 0.45);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* 4. CONTENEDOR PRINCIPAL */
+
+.dashboard-container {
+  width: min(1350px, calc(100% - 64px));
+  margin: 0 auto;
+  padding: 42px 0 40px;
+}
+
+/* 5. ENCABEZADO */
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  margin-bottom: 10px;
+  color: var(--gold-dark);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  color: var(--navy);
+  font-family: 'Fraunces', serif;
+  font-size: clamp(2rem, 3vw, 2.7rem);
+  line-height: 1.2;
+}
+
+.subtitle {
+  max-width: 650px;
+  margin: 12px 0 0;
+  color: var(--gray);
+  font-size: 0.94rem;
+  line-height: 1.7;
+}
+
+/* 6. BOTONES */
+
+.btn-gold {
+  flex-shrink: 0;
+  padding: 11px 20px;
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  background-color: var(--gold);
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.btn-gold:hover {
+  background-color: var(--gold-dark);
+  border-color: var(--gold-dark);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-gold:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 7. ESTADO DE CONEXIÓN */
+
+#estado-conexion {
+  margin-bottom: 25px;
+  border-radius: 9px;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+/* 8. TARJETAS DE INDICADORES KPI */
+
+.kpi-card {
+  position: relative;
+  height: 100%;
+  min-height: 165px;
+  padding: 25px;
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid rgba(31, 41, 51, 0.07);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease,
+              box-shadow 0.2s ease;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  background: var(--gold);
+}
+
+.kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 35px rgba(31, 41, 51, 0.12);
+}
+
+.kpi-label {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--gray);
+  font-size: 0.79rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.kpi-card h2 {
+  margin: 0 0 9px;
+  color: var(--navy);
+  font-family: 'Fraunces', serif;
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.kpi-card p {
+  margin: 0;
+  color: var(--gray);
+  font-size: 0.83rem;
+}
+
+/* 9. TARJETAS DE GRÁFICOS */
+
+.chart-card {
+  display: flex;
+  flex-direction: column;
+  padding: 27px;
+  background: var(--paper);
+  border: 1px solid rgba(31, 41, 51, 0.07);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.chart-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 23px;
+}
+
+.chart-heading h2 {
+  margin: 0;
+  color: var(--navy);
+  font-family: 'Fraunces', serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.chart-heading p {
+  margin: 8px 0 0;
+  color: var(--gray);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.chart-tag {
+  display: inline-block;
+  padding: 6px 12px;
+  border: 1px solid rgba(182, 138, 53, 0.25);
+  border-radius: 20px;
+  background: var(--gold-light);
+  color: var(--gold-dark);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 10. CONTENEDORES DE CHART.JS */
+
+.chart-wrapper {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 300px;
+  height: 340px;
+}
+
+.chart-wrapper canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 11. PIE DE PÁGINA */
+
+.dashboard-footer {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 40px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+
+.dashboard-footer p {
+  margin: 0;
+  color: var(--gray);
+  font-size: 0.78rem;
+}
+
+/* 12. ADAPTACIÓN A TABLETS */
+
+@media (max-width: 991px) {
+  .dashboard-container {
+    width: calc(100% - 40px);
+    padding-top: 30px;
+  }
+
+  .dashboard-header {
+    align-items: flex-start;
+  }
+
+  .chart-wrapper {
+    height: 320px;
+  }
+}
+
+/* 13. ADAPTACIÓN A CELULARES */
+
+@media (max-width: 600px) {
+  .dashboard-container {
+    width: calc(100% - 28px);
+    padding-top: 25px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 2rem;
+  }
+
+  .btn-gold {
+    width: 100%;
+  }
+
+  .kpi-card {
+    min-height: 145px;
+    padding: 22px;
+  }
+
+  .chart-card {
+    padding: 19px;
+  }
+
+  .chart-heading {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .chart-wrapper {
+    min-height: 260px;
+    height: 280px;
+  }
+
+  .dashboard-footer {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+/* 14. ACCESIBILIDAD */
+
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
