@@ -377,3 +377,8 @@ button:focus-visible {
     animation-duration: 0.01ms !important;
   }
 }
+
+.btn-gold { background-color: var(--gold, #b8860b); color: #fff; font-weight: 600; border: none; }
+.btn-gold:hover { background-color: #9a7009; color: #fff; }
+.btn-admin-panel { background-color: transparent; color: var(--gold, #b8860b) !important; border: 1px solid var(--gold, #b8860b); font-weight: 700; }
+.btn-admin-panel:hover { background-color: var(--gold, #b8860b); color: #fff !important; }

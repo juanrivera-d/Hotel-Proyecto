@@ -188,7 +188,7 @@ try:
     # 4. CARGA DE RESULTADOS A MYSQL
     print("\n=== PREPARANDO CARGA ANALITICA ===")
 
-    print("Las tres tablas estan vacias. Iniciando carga.")
+    print("Iniciando carga.")
 
     def guardar(df, tabla):
         (

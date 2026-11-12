@@ -517,3 +517,73 @@ document.addEventListener("DOMContentLoaded", () => {
 
   cargarDashboard();
 });
+
+// === NAVEGACIÓN UNIFICADA Y CONTROL DE ACCESO ADMIN ===
+{
+  const token = localStorage.getItem('token');
+  const sesionActual = JSON.parse(localStorage.getItem('usuario') || '{}');
+  const esAdmin = sesionActual.rol && ['admin', 'administrador'].includes(sesionActual.rol.toLowerCase());
+
+  // Proteger la ruta igual que en menu_admin.html
+  if (!token || !sesionActual.documento) {
+    window.location.href = 'login.html';
+  } else if (!esAdmin) {
+    window.location.href = 'index.html';
+  }
+
+  window.cerrarSesion = function () {
+    localStorage.removeItem('token');
+    localStorage.removeItem('usuario');
+    window.location.href = 'login.html';
+  };
+
+  function renderizarNavegacionAdmin() {
+    const menu = document.getElementById('menu-navegacion');
+    if (!menu || !esAdmin) return;
+
+    menu.innerHTML =
+      '<li class="nav-item dropdown">' +
+        '<a class="nav-link dropdown-toggle fw-semibold" href="#" role="button" data-bs-toggle="dropdown">Vista Cliente</a>' +
+        '<ul class="dropdown-menu shadow">' +
+          '<li><a class="dropdown-item" href="index.html">Inicio</a></li>' +
+          '<li><a class="dropdown-item" href="ver_habitaciones.html">Catálogo</a></li>' +
+          '<li><a class="dropdown-item" href="ver_servicios.html">Servicios</a></li>' +
+          '<li><a class="dropdown-item" href="disponibilidad.html">Disponibilidad</a></li>' +
+          '<li><a class="dropdown-item" href="menu_pagos.html">Pagos</a></li>' +
+          '<li><a class="dropdown-item" href="ver_reservas.html">Mis Reservas</a></li>' +
+        '</ul>' +
+      '</li>' +
+      '<li class="nav-item dropdown">' +
+        '<button class="btn btn-sm btn-admin-panel dropdown-toggle px-3 py-1 active" type="button" data-bs-toggle="dropdown">Administración ⚙️</button>' +
+        '<ul class="dropdown-menu shadow">' +
+          '<li><a class="dropdown-item fw-bold text-dark" href="gestion-reservas.html">Gestión de Reservas</a></li>' +
+          '<li><a class="dropdown-item fw-bold text-dark" href="editar_habitacion.html">Gestión de Habitaciones</a></li>' +
+          '<li><a class="dropdown-item fw-bold text-dark" href="editar_servicios.html">Gestión de Servicios</a></li>' +
+          '<li><a class="dropdown-item fw-bold text-dark" href="editar_pagos.html">Gestión de Pagos</a></li>' +
+          '<li><a class="dropdown-item fw-bold text-dark active" href="dashboard.html">Dashboard Analítico</a></li>' +
+          '<li><hr class="dropdown-divider"></li>' +
+          '<li><a class="dropdown-item fw-bold text-dark" href="usuarios.html">Gestión de Usuarios</a></li>' +
+        '</ul>' +
+      '</li>' +
+      '<li class="nav-item ms-lg-2" id="zona-usuario"></li>';
+
+    const primerNombre = (sesionActual.nombre || sesionActual.nombreCompleto || 'Usuario').split(' ')[0];
+    document.getElementById('zona-usuario').innerHTML =
+      '<div class="dropdown">' +
+        '<button class="btn btn-gold btn-sm dropdown-toggle fw-bold px-3 py-1" type="button" data-bs-toggle="dropdown">' +
+          primerNombre + ' <span class="badge bg-danger ms-1">Admin</span>' +
+        '</button>' +
+        '<ul class="dropdown-menu dropdown-menu-end shadow">' +
+          '<li><a class="dropdown-item fw-bold" href="configuracion.html">Configuración</a></li>' +
+          '<li><hr class="dropdown-divider"></li>' +
+          '<li><button class="dropdown-item text-danger fw-bold" onclick="cerrarSesion()">Cerrar Sesión</button></li>' +
+        '</ul>' +
+      '</div>';
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderizarNavegacionAdmin);
+  } else {
+    renderizarNavegacionAdmin();
+  }
+}

@@ -25,51 +25,17 @@
 
 <body>
 
-  <!-- BARRA DE NAVEGACIÓN -->
+<!-- BARRA DE NAVEGACIÓN UNIFICADA -->
   <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
     <div class="container">
       <a class="navbar-brand fw-bold" href="index.html">
-        <span class="brand-white">Hotel</span>
-        <span class="brand-gold">Leyton</span>
+        <span style="color:#fff;">Hotel</span> <span style="color:var(--gold); font-style: italic;">Leyton</span>
       </a>
-
-      <button
-        class="navbar-toggler"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#navbarNav"
-        aria-label="Abrir navegación"
-      >
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
-
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
-
-          <li class="nav-item">
-            <a class="nav-link" href="index.html">Inicio</a>
-          </li>
-
-          <li class="nav-item">
-            <a class="nav-link" href="gestion-reservas.html">
-              Gestión de reservas
-            </a>
-          </li>
-
-          <li class="nav-item">
-            <a class="nav-link active" href="dashboard.html"
-               aria-current="page">
-              Dashboard analítico
-            </a>
-          </li>
-
-          <li class="nav-item">
-            <a class="btn btn-outline-light btn-sm" href="index.html">
-              Volver al sistema
-            </a>
-          </li>
-
-        </ul>
+        <ul class="navbar-nav ms-auto align-items-center gap-2" id="menu-navegacion"></ul>
       </div>
     </div>
   </nav>
