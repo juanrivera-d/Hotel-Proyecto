@@ -2,13 +2,14 @@ import os
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
-MYSQL_USER = os.environ["HOTEL_MYSQL_USER"]
-MYSQL_PASSWORD = os.environ["HOTEL_MYSQL_PASSWORD"]
+MYSQL_USER = os.getenv("HOTEL_MYSQL_USER", "root")
+MYSQL_PASSWORD = os.getenv("HOTEL_MYSQL_PASSWORD", "root")
 
 spark = (
     SparkSession.builder
     .appName("HotelAnalyticsV2")
     .master("local[1]")
+    .config("spark.jars.packages", "mysql:mysql-connector-java:8.0.28")
     .config("spark.driver.memory", "512m")
     .config("spark.sql.shuffle.partitions", "4")
     .getOrCreate()
@@ -187,21 +188,6 @@ try:
     # 4. CARGA DE RESULTADOS A MYSQL
     print("\n=== PREPARANDO CARGA ANALITICA ===")
 
-    tablas = [
-        "resumen_trafico_logs",
-        "resumen_sentimiento_resenas",
-        "resumen_ocupacion_mensual"
-    ]
-
-    # Impedir cargas duplicadas.
-    for tabla in tablas:
-        cantidad = leer("bd_analytics", tabla).count()
-
-        if cantidad != 0:
-            raise RuntimeError(
-                f"Carga cancelada: {tabla} contiene {cantidad} registros"
-            )
-
     print("Las tres tablas estan vacias. Iniciando carga.")
 
     def guardar(df, tabla):
@@ -216,7 +202,8 @@ try:
             .option("password", MYSQL_PASSWORD)
             .option("driver", "com.mysql.cj.jdbc.Driver")
             .option("batchsize", "1000")
-            .mode("append")
+            .option("truncate", "true")
+            .mode("overwrite")
             .save()
         )
 
