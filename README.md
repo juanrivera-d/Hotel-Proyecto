@@ -157,7 +157,7 @@ Una vez desplegados los servicios y ejecutado el pipeline de Spark, todo el trá
 - **Panel de Estadísticas HAProxy:** [http://192.168.100.3:5080/haproxy?stats](http://192.168.100.3:5080/haproxy?stats)
 - **Rutas API Gateway (Rutas Relativas):** `http://192.168.100.3:5080/api/{recurso}`
 
-### Acceso y Visualización del Dashboard Analítico (Rol 4)
+### Acceso y Visualización del Dashboard Analítico
 
 - **Control de Acceso:** La vista `dashboard.html` está integrada en el menú desplegable **Administración** de todas las vistas administrativas y valida la sesión activa (`localStorage`), redirigiendo automáticamente a usuarios sin rol de Administrador.
 - **Indicadores y Gráficas (Chart.js):** Consume los datos agregados de `bd_analytics` mediante rutas relativas (`/api/analytics/...`) enrutadas por HAProxy para mostrar KPIs en tiempo real y tres visualizaciones: distribución de tráfico de logs, análisis de sentimiento de reseñas por categoría de habitación y porcentaje real de ocupación mensual.
