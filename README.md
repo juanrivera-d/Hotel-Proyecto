@@ -6,11 +6,11 @@ Este proyecto implementa una arquitectura distribuida de microservicios para la 
 
 ## 1. Topología de Infraestructura
 
-El entorno está orquestado mediante **Vagrant** y **Docker Swarm** a través de dos nodos virtualizados en Ubuntu:
+El entorno está orquestado mediante **Vagrant** y **Docker Swarm** a través de dos nodos virtualizados en Ubuntu interconectados mediante una red overlay (`red-hotel`):
 
-- **`servidorUbuntu1` (`192.168.100.2`):** Nodo Worker / Capa de Presentación. Aloja el contenedor del Frontend web (Apache HTTPD) expuesto en el puerto `80`.
-- **`servidorUbuntu2` (`192.168.100.3`):** Nodo Manager / Núcleo de Orquestación, Datos y Analítica.
-  - **Balanceador de Carga:** HAProxy (puerto `5080`, panel de estadísticas en `/haproxy?stats`).
+- **`servidorUbuntu1` (`192.168.100.2`):** Nodo Worker / Capa de Presentación. Aloja el contenedor del servidor web estático (Apache HTTPD en puerto interno `80`), servido al exterior a través de HAProxy.
+- **`servidorUbuntu2` (`192.168.100.3`):** Nodo Manager / Punto de Entrada Único, Datos y Analítica.
+  - **Reverse Proxy & Balanceador de Carga:** HAProxy (puerto `5080`), actúa como puerta de entrada unificada (*Same-Origin*) tanto para la interfaz web (`default_backend`) como para todas las rutas `/api/*`. Panel de estadísticas en `/haproxy?stats`.
   - **Microservicios Backend (Node.js/Express):** Servicios (`3000`), Usuarios (`3001`), Habitaciones (`3002`), Reservas (`3003`), Pagos (`3004`) y Backend Analítico (`3005`).
   - **Base de Datos Relacional:** MySQL 8.0 (`db-mysql` en puerto `3306`).
   - **Motor de Big Data:** Apache Spark (PySpark) + Conector JDBC MySQL.
@@ -150,28 +150,28 @@ docker exec -it $(docker ps -q -f name=db-mysql) mysql -u root -proot -e "USE bd
 
 ## 7. Verificación de Accesos y Endpoints
 
-Una vez desplegados los servicios y ejecutado el pipeline de Spark, se pueden verificar los siguientes accesos:
+Una vez desplegados los servicios y ejecutado el pipeline de Spark, todo el tráfico ingresa de forma centralizada a través de **HAProxy (`192.168.100.3:5080`)**:
 
-- **Aplicación Web Frontend:** [http://192.168.100.2](http://192.168.100.2)
-- **Dashboard Analítico (Solo Administradores):** [http://192.168.100.2/dashboard.html](http://192.168.100.2/dashboard.html)
+- **Aplicación Web Frontend (Punto de Entrada Único):** [http://192.168.100.3:5080](http://192.168.100.3:5080)
+- **Dashboard Analítico (Solo Administradores):** [http://192.168.100.3:5080/dashboard.html](http://192.168.100.3:5080/dashboard.html)
 - **Panel de Estadísticas HAProxy:** [http://192.168.100.3:5080/haproxy?stats](http://192.168.100.3:5080/haproxy?stats)
-- **Balanceador HAProxy / Rutas Backend:** `http://192.168.100.3:5080/api/{recurso}`
+- **Rutas API Gateway (Rutas Relativas):** `http://192.168.100.3:5080/api/{recurso}`
 
 ### Acceso y Visualización del Dashboard Analítico (Rol 4)
 
 - **Control de Acceso:** La vista `dashboard.html` está integrada en el menú desplegable **Administración** de todas las vistas administrativas y valida la sesión activa (`localStorage`), redirigiendo automáticamente a usuarios sin rol de Administrador.
-- **Indicadores y Gráficas (Chart.js):** Consume los datos agregados de `bd_analytics` a través de HAProxy para mostrar KPIs en tiempo real y tres visualizaciones: distribución de tráfico de logs, análisis de sentimiento de reseñas por categoría de habitación y porcentaje real de ocupación mensual.
+- **Indicadores y Gráficas (Chart.js):** Consume los datos agregados de `bd_analytics` mediante rutas relativas (`/api/analytics/...`) enrutadas por HAProxy para mostrar KPIs en tiempo real y tres visualizaciones: distribución de tráfico de logs, análisis de sentimiento de reseñas por categoría de habitación y porcentaje real de ocupación mensual.
 
-### Endpoints Transaccionales
+### Endpoints Transaccionales (Enrutados por HAProxy)
 
-- `/api/servicios` (Puerto `3000`)
-- `/api/usuarios` (Puerto `3001`)
-- `/api/habitaciones` (Puerto `3002`)
-- `/api/reservas` (Puerto `3003`)
-- `/api/pagos` (Puerto `3004`)
+- `/api/servicios` $\rightarrow$ `backend-servicios` (Puerto interno `3000`)
+- `/api/usuarios`, `/api/login`, `/api/perfil` $\rightarrow$ `backend-usuarios` (Puerto interno `3001`)
+- `/api/habitaciones` $\rightarrow$ `backend-habitaciones` (Puerto interno `3002`)
+- `/api/reservas` $\rightarrow$ `backend-reservas` (Puerto interno `3003`)
+- `/api/pagos` $\rightarrow$ `backend-pagos` (Puerto interno `3004`)
 
-### Endpoints Analíticos (Big Data)
+### Endpoints Analíticos - Big Data (Enrutados por HAProxy)
 
-- `/api/analytics/trafico-logs` (Puerto `3005`)
-- `/api/analytics/sentimiento-resenas` (Puerto `3005`)
-- `/api/analytics/ocupacion-mensual` (Puerto `3005`)
+- `/api/analytics/trafico-logs` $\rightarrow$ `backend-analitica` (Puerto interno `3005`)
+- `/api/analytics/sentimiento-resenas` $\rightarrow$ `backend-analitica` (Puerto interno `3005`)
+- `/api/analytics/ocupacion-mensual` $\rightarrow$ `backend-analitica` (Puerto interno `3005`)
