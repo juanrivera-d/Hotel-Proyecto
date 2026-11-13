@@ -20,7 +20,7 @@ BASE = "jdbc:mysql://192.168.100.3:3306/"
 def leer(base_datos, tabla):
     return (
         spark.read.format("jdbc")
-        .option("url", BASE + base_datos + "?useSSL=false&serverTimezone=UTC")
+        .option("url", BASE + base_datos + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC")
         .option("dbtable", tabla)
         .option("user", MYSQL_USER)
         .option("password", MYSQL_PASSWORD)
@@ -193,10 +193,7 @@ try:
     def guardar(df, tabla):
         (
             df.write.format("jdbc")
-            .option(
-                "url",
-                BASE + "bd_analytics?useSSL=false&serverTimezone=UTC"
-            )
+            .option("url", BASE + "bd_analytics?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC")
             .option("dbtable", tabla)
             .option("user", MYSQL_USER)
             .option("password", MYSQL_PASSWORD)
