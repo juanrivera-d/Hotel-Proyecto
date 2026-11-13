@@ -401,7 +401,7 @@
 
         let pagos = [];
         try {
-          const resPagos = await axios.get('/api/pagos', {
+          const resPagos = await axios.get(`/api/pagos?idUsuario=${idUsuario}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           pagos = Array.isArray(resPagos.data) ? resPagos.data : (resPagos.data.pagos || []);
@@ -444,7 +444,7 @@
           } else if (saldoPendiente > 0) {
             btnAccion = `<a href="insertar_pago.html?idReserva=${r.idReserva}&monto=${saldoPendiente}" class="pay-button">Pagar ($${saldoPendiente.toLocaleString('es-CO')})</a>`;
           } else {
-            btnAccion = `<span class="paid-button">Pagado Completo ✓</span>`;
+            btnAccion = `<span class="paid-button">Pago Completo ✓</span>`;
           }
 
           let badgeClase = 'status pending';
