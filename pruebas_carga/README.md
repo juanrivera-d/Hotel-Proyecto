@@ -53,4 +53,4 @@ Por cada corrida con `--csv`, Locust exporta cuatro archivos:
 7. **`E2_analitica_pesada_*` (Consulta masiva):** `AnaliticaPesada` — 5 usuarios, spawn 1/s, 120 s sobre `/api/analytics/trafico-logs` (~7.78 MB sin paginar, prom. 1,197 ms, 1 error HTTP 500).
 8. **`E3_piloto_*` (Escritura piloto):** `Escritura` — 1 escritor, tope de 5 `POST /api/servicios` con JWT (5/5 exitosas, P95 67 ms).
 9. **`E3_5escritores_*` (Escritura ampliada):** `Escritura` — Tope de 50 `POST /api/servicios` con JWT (48/50 exitosas, P95 180 ms, 2 errores HTTP 500).
-10. **`E3_50_diagnostico_*` (Corrida descartada):** `Escritura` — Intento posterior bloqueado por 100 % HTTP 401 (token expirado/no válido en esa sesión; sin inserciones en MySQL).
+10. **`E3_diagnostico_*` (Escritura verificada - 60 s):** `Escritura` — Corrida controlada de 60 s con token JWT válido (`POST /api/servicios`: 37 peticiones, 0 % fallos, P95 130 ms; graficada en el Panel 3 de `fig5_locust_final.png`).
