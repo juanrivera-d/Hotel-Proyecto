@@ -34,6 +34,7 @@ Antes de comenzar, se deben instalar las siguientes herramientas en la máquina 
 - [VirtualBox](https://www.virtualbox.org/)
 - [Vagrant](https://www.vagrantup.com/)
 - [Git](https://git-scm.com/)
+- [Python 3.x](https://www.python.org/) *(Opcional, requerido únicamente para ejecutar las pruebas de carga de la Sección 8 desde el Host)*
 
 ---
 
@@ -192,7 +193,7 @@ Para validar la estabilidad, el balanceo de carga en HAProxy y los tiempos de re
 ```powershell
 cd pruebas_carga
 python -m pip install locust requests pandas matplotlib
-$env:HOTEL_HOST = "[http://192.168.100.3:5080](http://192.168.100.3:5080)"
+$env:HOTEL_HOST = "http://192.168.100.3:5080"
 
 # Validación base de endpoints
 python verificar_rutas.py
