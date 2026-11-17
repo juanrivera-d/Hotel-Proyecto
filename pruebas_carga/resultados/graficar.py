@@ -1,8 +1,12 @@
-﻿import pandas as pd
+﻿import os
+import pandas as pd
 import matplotlib.pyplot as plt
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 def cargar(archivo):
-    df = pd.read_csv(archivo)
+    ruta = os.path.join(BASE_DIR, archivo)
+    df = pd.read_csv(ruta)
     df = df[df['Name'] == 'Aggregated'].copy()
     df['t'] = df['Timestamp'] - df['Timestamp'].iloc[0]
     df['p95'] = pd.to_numeric(df['95%'], errors='coerce')
@@ -11,7 +15,7 @@ def cargar(archivo):
 
 h1 = cargar('E1b_3replicas_stats_history.csv')
 h2 = cargar('E2_analitica_pesada_stats_history.csv')
-h3 = cargar('E3_5escritores_stats_history.csv')
+h3 = cargar('E3_diagnostico_stats_history.csv')
 
 fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12.5, 3.4), dpi=220)
 
@@ -34,15 +38,16 @@ ax2.set_ylabel('Req/s')
 ax2.legend(fontsize=7.5, loc='center right')
 ax2.grid(True, alpha=0.3)
 
-# Panel 3: Evolución temporal P95 de escrituras E3
-ax3.plot(h3['t'], h3['p95'], label='P95 móvil (P95 global: 180 ms)', color='#2ca02c', linewidth=1.6)
-ax3.axhline(180, color='#555555', linestyle='--', linewidth=1, label='P95 agregado (180 ms)')
+# Panel 3: Evolución temporal P95 de escrituras E3 (Diagnóstico 60 s)
+ax3.plot(h3['t'], h3['p95'], label='P95 móvil (37 req, 0 % fallos)', color='#2ca02c', linewidth=1.6)
+ax3.axhline(130, color='#555555', linestyle='--', linewidth=1, label='P95 agregado (130 ms)')
 ax3.set_title('E3: Latencia P95 móvil Escrituras (ms)')
 ax3.set_xlabel('Tiempo transcurrido (s)')
 ax3.set_ylabel('ms')
 ax3.legend(fontsize=7.5, loc='upper right')
 ax3.grid(True, alpha=0.3)
 
+salida = os.path.join(BASE_DIR, 'fig5_locust_final.png')
 plt.tight_layout()
-plt.savefig('fig5_locust_final.png')
-print('Listo: fig5_locust_final.png generado')
+plt.savefig(salida)
+print(f'Listo: {salida}')
