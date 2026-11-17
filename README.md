@@ -175,3 +175,34 @@ Una vez desplegados los servicios y ejecutado el pipeline de Spark, todo el trá
 - `/api/analytics/trafico-logs` $\rightarrow$ `backend-analitica` (Puerto interno `3005`)
 - `/api/analytics/sentimiento-resenas` $\rightarrow$ `backend-analitica` (Puerto interno `3005`)
 - `/api/analytics/ocupacion-mensual` $\rightarrow$ `backend-analitica` (Puerto interno `3005`)
+
+---
+
+## 8. Pruebas de Carga y Rendimiento (Locust)
+
+Para validar la estabilidad, el balanceo de carga en HAProxy y los tiempos de respuesta del clúster sin consumir recursos de las máquinas virtuales, se ejecutaron pruebas de carga aisladas desde el host externo mediante **Locust** (`pruebas_carga/`):
+
+- **Scripts de validación (`pruebas_carga/`):**
+  - `verificar_rutas.py`: Prueba de humo funcional sobre códigos HTTP, autenticación JWT y tamaños de payload.
+  - `locustfile.py`: Perfiles aislados de tráfico (`LecturaLigera`, `AnaliticaLigera`, `AnaliticaPesada` y `Escritura`).
+  - `resumir.py` y `resultados/graficar.py`: Generación automática de tablas métricas y comparativas (`resultados/fig5_locust_final.png`).
+
+### Ejecución Rápida (Desde Host Windows)
+
+```powershell
+cd pruebas_carga
+python -m pip install locust requests pandas matplotlib
+$env:HOTEL_HOST = "[http://192.168.100.3:5080](http://192.168.100.3:5080)"
+
+# Validación base de endpoints
+python verificar_rutas.py
+
+# Prueba de carga (ejemplo: 20 usuarios concurrentes durante 120s)
+python -m locust -f locustfile.py LecturaLigera --headless -u 20 -r 2 -t 120s --csv resultados\E1b_3replicas
+```
+
+### Resultados Clave Validados (`E0` – `E3`)
+
+- **Escalado Horizontal (`E1b`):** Con 20 usuarios concurrentes y **0 % de fallos**, el throughput se mantuvo estable en **~25.3–25.5 req/s** (`P95` de 17–20 ms), reduciendo los picos máximos de latencia de **488 ms** (1 réplica) a **96–140 ms** (3 réplicas).
+- **Analítica Ligera vs. Pesada (`E2`):** Las consultas agregadas ligeras promediaron **10 ms** sin errores, mientras que `/api/analytics/trafico-logs` (~7.78 MB sin paginar) promedió **1,197 ms** (`P95` de 2,000 ms).
+- **Escrituras Autenticadas (`E3`):** `POST /api/servicios` con validación JWT alcanzó **100 % de éxito** en piloto (`P95` 67 ms) y **96 % de éxito** bajo concurrencia (`P95` 180 ms).
