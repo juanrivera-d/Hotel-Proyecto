@@ -206,4 +206,4 @@ python -m locust -f locustfile.py LecturaLigera --headless -u 20 -r 2 -t 120s --
 
 - **Escalado Horizontal (`E1b`):** Con 20 usuarios concurrentes y **0 % de fallos**, el throughput se mantuvo estable en **~25.3–25.5 req/s** (`P95` de 17–20 ms), reduciendo los picos máximos de latencia de **488 ms** (1 réplica) a **96–140 ms** (3 réplicas).
 - **Analítica Ligera vs. Pesada (`E2`):** Las consultas agregadas ligeras promediaron **10 ms** sin errores, mientras que `/api/analytics/trafico-logs` (~7.78 MB sin paginar) promedió **1,197 ms** (`P95` de 2,000 ms).
-- **Escrituras Autenticadas (`E3`):** `POST /api/servicios` con validación JWT alcanzó **100 % de éxito** en piloto (`P95` 67 ms) y **96 % de éxito** bajo concurrencia (`P95` 180 ms).
+- **Escrituras Autenticadas (`E3`):** `POST /api/servicios` con validación JWT alcanzó **100 % de éxito** tanto en piloto (`P95` 67 ms) como en la corrida controlada de 60 s (`37 req`, `P95` 130 ms), y **96 % de éxito** bajo estrés de 5 escritores (`P95` 180 ms).

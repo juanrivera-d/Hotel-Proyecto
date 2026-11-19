@@ -1,35 +1,3 @@
-"""
-Pruebas de carga - Sistema de Gestión Hotelera (Docker Swarm + HAProxy)
-=======================================================================
-Cada capa de la arquitectura tiene su propia clase de usuario. Para aislar un
-experimento se elige la clase por NOMBRE en la línea de comandos:
-
-    python -m locust -f locustfile.py LecturaLigera
-
-Clases (una por capa):
-  LecturaLigera    GET /api/habitaciones y /api/servicios   -> microservicios / escalado horizontal
-  AnaliticaPesada  GET /api/analytics/trafico-logs (46,094 filas, sin paginar) -> respuestas grandes
-  AnaliticaLigera  GET sentimiento-resenas y ocupacion-mensual (20 y 109 filas) -> control de la anterior
-  Escritura        POST /api/servicios (y opcional POST /api/usuarios)          -> MySQL (escrituras)
-
-Todo se configura con VARIABLES DE ENTORNO (nada sensible queda en el código):
-  HOTEL_HOST                 URL base. Por defecto http://192.168.100.3:5080
-  HOTEL_LOGIN_PATH           Ruta de login. Por defecto /api/login
-  HOTEL_LOGIN_DOCUMENTO      Documento de un usuario de PRUEBA (solo si los POST exigen JWT)
-  HOTEL_LOGIN_PASSWORD       Contraseña de ese usuario (solo si los POST exigen JWT)
-  HOTEL_TEST_PASSWORD        Contraseña para los usuarios de prueba que se registren (POST /api/usuarios)
-  HOTEL_WRITE_USUARIOS       "1" para incluir POST /api/usuarios en Escritura (por defecto solo /api/servicios)
-  HOTEL_WRITERS              Número EXACTO de usuarios de Escritura (fixed_count). -u = lectores + escritores
-  HOTEL_MAX_WRITES           Tope total de registros creados por ejecución. Por defecto 2000
-  HOTEL_LECTURA_SERVICIOS    "0" para que LecturaLigera lea SOLO /api/habitaciones (obligatorio en el
-                             experimento de escritura: GET /api/servicios crece con los registros creados)
-  HOTEL_LIGERA_WAIT_MIN/MAX  Pausa entre peticiones de LecturaLigera (por defecto 0.5 / 1.0 s)
-  HOTEL_PESADA_WAIT_MIN/MAX  Pausa de AnaliticaPesada (por defecto 1 / 2 s)
-  HOTEL_WAIT_MIN/MAX         Pausa de AnaliticaLigera y Escritura (por defecto 1 / 2 s)
-  HOTEL_RUN_ID               Identificador de la ejecución (por defecto aleatorio); marca los registros creados
-  HOTEL_SHAPE=step           Rampa escalonada automática (ver StepShape). Variables: HOTEL_STEP_USERS,
-                             HOTEL_STEP_TIME, HOTEL_MAX_USERS, HOTEL_STEP_SPAWN
-"""
 import math
 import os
 import random
@@ -41,9 +9,6 @@ import requests
 from locust import HttpUser, LoadTestShape, between, events, task
 
 
-# ----------------------------------------------------------------------------
-# Configuración desde el entorno
-# ----------------------------------------------------------------------------
 def _f(name, default):
     return float(os.getenv(name, default))
 
@@ -87,9 +52,6 @@ class _Contador:
 ESCRITURAS = _Contador(_i("HOTEL_MAX_WRITES", 2000))
 
 
-# ----------------------------------------------------------------------------
-# Utilidades de peticiones
-# ----------------------------------------------------------------------------
 def _motivo(resp):
     """Texto del fallo: excepción de red (RemoteDisconnected, ConnectionReset...) o código HTTP."""
     err = getattr(resp, "error", None)
@@ -118,9 +80,7 @@ def _post(user, path, body, name, ok=(200, 201)):
             r.failure(_motivo(r))
 
 
-# ----------------------------------------------------------------------------
-# CAPA 1 - Microservicios (lecturas ligeras)
-# ----------------------------------------------------------------------------
+
 class LecturaLigera(HttpUser):
     """Lecturas ligeras. Pesos 3:2 entre habitaciones y servicios (o solo habitaciones)."""
     host = os.getenv("HOTEL_HOST", DEFAULT_HOST)
@@ -135,9 +95,6 @@ class LecturaLigera(HttpUser):
     tasks = {habitaciones: 3, servicios: 2} if INCLUIR_SERVICIOS else {habitaciones: 1}
 
 
-# ----------------------------------------------------------------------------
-# CAPA 3 - Respuestas grandes (analítica)
-# ----------------------------------------------------------------------------
 class AnaliticaPesada(HttpUser):
     """46,094 filas en un solo JSON (~4 MB) sin paginar. Úsese con POCOS usuarios."""
     host = os.getenv("HOTEL_HOST", DEFAULT_HOST)
@@ -162,9 +119,6 @@ class AnaliticaLigera(HttpUser):
         _get(self, "/api/analytics/ocupacion-mensual", TIMEOUT_LIGERO)
 
 
-# ----------------------------------------------------------------------------
-# CAPA 2 - Base de datos (escrituras)
-# ----------------------------------------------------------------------------
 class Escritura(HttpUser):
     """
     Escrituras controladas. Cada registro lleva la marca LOCUST-<RUN_ID> para poder borrarlo.
@@ -206,9 +160,6 @@ class Escritura(HttpUser):
             _post(self, "/api/usuarios", body, "POST /api/usuarios")
 
 
-# ----------------------------------------------------------------------------
-# Rampa escalonada (opcional): HOTEL_SHAPE=step
-# ----------------------------------------------------------------------------
 if os.getenv("HOTEL_SHAPE", "").lower() == "step":
 
     class StepShape(LoadTestShape):
@@ -227,9 +178,6 @@ if os.getenv("HOTEL_SHAPE", "").lower() == "step":
             return min((escalon + 1) * self.step_users, self.max_users), self.spawn_rate
 
 
-# ----------------------------------------------------------------------------
-# Eventos: login único (si hay credenciales) y resumen final
-# ----------------------------------------------------------------------------
 @events.test_start.add_listener
 def _al_iniciar(environment, **kwargs):
     global TOKEN

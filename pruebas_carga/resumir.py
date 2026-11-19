@@ -1,9 +1,3 @@
-"""
-Resume los CSV de Locust en tablas Markdown listas para el informe.
-    python resumir.py resultados\\E1b_r1 resultados\\E1b_r2     -> tabla por endpoint de cada ejecución
-    python resumir.py --rampa resultados\\E1a                  -> métricas por escalón de usuarios (Aggregated)
-El argumento es el prefijo que se pasó a --csv (se leen <prefijo>_stats.csv y <prefijo>_stats_history.csv).
-"""
 import csv
 import statistics
 import sys

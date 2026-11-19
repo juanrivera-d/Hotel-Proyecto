@@ -1,9 +1,3 @@
-"""
-Verifica las rutas reales ANTES de cargar el sistema (1 petición por ruta).
-    python verificar_rutas.py              -> solo lecturas y login (si hay credenciales)
-    python verificar_rutas.py --escribir   -> además crea 1 servicio de prueba (LOCUST-SMOKE)
-Usa las mismas variables de entorno que locustfile.py.
-"""
 import os
 import sys
 import time

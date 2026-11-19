@@ -1,4 +1,4 @@
--- Esquemas de los 2 microservicios nuevos (misma convencion que tu dump)
+
 CREATE DATABASE IF NOT EXISTS `db_resenas` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 USE `db_resenas`;
 DROP TABLE IF EXISTS `resena`;

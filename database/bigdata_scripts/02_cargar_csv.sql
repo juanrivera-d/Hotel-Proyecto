@@ -1,6 +1,4 @@
--- Ejecutar DESDE la carpeta donde estan los CSV:
---   mysql --local-infile=1 -h 127.0.0.1 -P 3306 -u root -p < 02_cargar_csv.sql
--- (el servidor necesita: SET GLOBAL local_infile=1;)
+
 SET SESSION foreign_key_checks=0, unique_checks=0, sql_log_bin=0;
 
 USE bd_usuarios;
